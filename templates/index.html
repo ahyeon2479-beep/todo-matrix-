@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo Matrix</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- ── 헤더 ──────────────────────────────────────── -->
+    <header class="header">
+        <div class="header-left">
+            <span class="header-title">&#9733; Todo Matrix</span>
+            <button class="btn-icon hamburger" id="hamburgerBtn">&#9776;</button>
+            <span class="header-date" id="headerDate"></span>
+        </div>
+        <div class="header-right">
+            <label class="chk-completed">
+                <input type="checkbox" id="showCompleted"> 완료된 항목 보기
+            </label>
+            <button class="nav-btn" id="btnMatrix" data-view="matrix">매트릭스</button>
+            <button class="nav-btn" id="btnCalendar" data-view="calendar">캘린더</button>
+            <button class="nav-btn active" id="btnHabitFull" data-view="habitFull">습관 체크</button>
+            <button class="btn-primary" id="btnAddTodo">+ 새 할 일</button>
+            <div class="user-info">
+                <span id="userName">{{ user.name }}</span>
+                <a href="/logout" class="btn-logout">로그아웃</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ── 햄버거 메뉴 ──────────────────────────────── -->
+    <div class="hamburger-menu hidden" id="hamburgerMenu">
+        <button data-action="repeatView">&#128257;  반복 할 일 관리</button>
+        <button data-action="habitFullView">&#9989;  습관 체크 관리</button>
+    </div>
+
+    <!-- ── 메인 콘텐츠 ──────────────────────────────── -->
+    <main class="main-content">
+
+        <!-- 매트릭스 뷰 -->
+        <div class="view" id="matrixView">
+            <div class="matrix-layout">
+                <aside class="sidebar">
+                    <div class="sidebar-section">
+                        <h3>메모</h3>
+                        <textarea id="memoBox" placeholder="오늘의 메모..."></textarea>
+                    </div>
+                    <hr>
+                    <div class="sidebar-section">
+                        <h3>할일 목록</h3>
+                        <div id="todoSummary"></div>
+                    </div>
+                    <button class="btn-primary btn-full" id="sidebarAddBtn">+ 새 할 일</button>
+                </aside>
+                <div class="matrix-main">
+                    <div class="matrix-date-bar">
+                        <button class="btn-sm" id="matrixPrev">&#9664;</button>
+                        <span id="matrixDateLabel"></span>
+                        <button class="btn-sm" id="matrixNext">&#9654;</button>
+                        <button class="btn-sm" id="matrixToday">오늘</button>
+                    </div>
+                    <div class="matrix-col-headers">
+                        <div class="row-label"></div>
+                        <div class="col-header">긴급함</div>
+                        <div class="col-header">긴급하지 않음</div>
+                    </div>
+                    <div class="matrix-grid">
+                        <div class="row-label">중요함</div>
+                        <div class="quadrant q1" data-urgent="true" data-important="true">
+                            <div class="q-header">Q1 긴급 + 중요</div>
+                            <div class="q-items"></div>
+                            <button class="q-add">+ 추가</button>
+                        </div>
+                        <div class="quadrant q2" data-urgent="false" data-important="true">
+                            <div class="q-header">Q2 중요</div>
+                            <div class="q-items"></div>
+                            <button class="q-add">+ 추가</button>
+                        </div>
+                        <div class="row-label">중요하지<br>않음</div>
+                        <div class="quadrant q3" data-urgent="true" data-important="false">
+                            <div class="q-header">Q3 긴급</div>
+                            <div class="q-items"></div>
+                            <button class="q-add">+ 추가</button>
+                        </div>
+                        <div class="quadrant q4" data-urgent="false" data-important="false">
+                            <div class="q-header">Q4 기타</div>
+                            <div class="q-items"></div>
+                            <button class="q-add">+ 추가</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 캘린더 뷰 -->
+        <div class="view hidden" id="calendarView">
+            <div class="cal-layout">
+                <aside class="sidebar cal-sidebar">
+                    <button class="btn-primary btn-full" id="calAddBtn">+ 만들기</button>
+                    <div class="mini-cal-header">
+                        <button class="btn-sm" id="miniPrev">&#8249;</button>
+                        <span id="miniLabel"></span>
+                        <button class="btn-sm" id="miniNext">&#8250;</button>
+                    </div>
+                    <div class="mini-cal-weekdays">
+                        <span class="sun">일</span><span>월</span><span>화</span>
+                        <span>수</span><span>목</span><span>금</span><span class="sat">토</span>
+                    </div>
+                    <div class="mini-cal-grid" id="miniCalGrid"></div>
+                    <hr>
+                    <div class="habit-sidebar" id="habitSidebar"></div>
+                </aside>
+                <div class="cal-main">
+                    <div class="cal-nav">
+                        <button class="btn-sm" id="calToday">오늘</button>
+                        <button class="btn-sm" id="calPrev">&#9664;</button>
+                        <button class="btn-sm" id="calNext">&#9654;</button>
+                        <span class="cal-title" id="calTitle"></span>
+                    </div>
+                    <div class="cal-weekdays">
+                        <span class="sun">일</span><span>월</span><span>화</span>
+                        <span>수</span><span>목</span><span>금</span><span class="sat">토</span>
+                    </div>
+                    <div class="cal-grid" id="calGrid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 습관 전체 뷰 -->
+        <div class="view hidden" id="habitFullView">
+            <div class="habit-full">
+                <div class="habit-full-header">
+                    <h2>&#9989; 습관 체크 관리</h2>
+                    <button class="btn-primary" id="habitAddBtn">+ 습관 추가</button>
+                </div>
+                <div class="habit-full-nav">
+                    <button class="btn-sm" id="habitPrev">&#9664;</button>
+                    <button class="btn-sm" id="habitNext">&#9654;</button>
+                    <span class="habit-full-title" id="habitFullTitle"></span>
+                    <button class="btn-sm" id="habitToday">오늘</button>
+                </div>
+                <div class="habit-chips" id="habitChips"></div>
+                <div class="habit-full-weeks" id="habitFullWeeks"></div>
+            </div>
+        </div>
+
+        <!-- 반복 할일 관리 뷰 -->
+        <div class="view hidden" id="repeatView">
+            <div class="repeat-full">
+                <div class="repeat-header">
+                    <h2>&#128257; 반복 할 일 관리</h2>
+                    <button class="btn-primary" id="repeatAddBtn">+ 반복 할 일 추가</button>
+                </div>
+                <p class="repeat-desc">지정한 요일/일자에 해당 사분면에서 자동 반복됩니다. (요일/일자 미지정 시 매일 반복)</p>
+                <div id="repeatList"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ── 모달: 할 일 추가/수정 ─────────────────────── -->
+    <div class="modal-overlay hidden" id="todoModal">
+        <div class="modal">
+            <h3 id="todoModalTitle">새 할 일 추가</h3>
+            <label>제목 *</label>
+            <input type="text" id="todoTitleInput" placeholder="할 일을 입력하세요">
+            <label>분류</label>
+            <div class="checkbox-row">
+                <label><input type="checkbox" id="todoUrgent"> 긴급함</label>
+                <label><input type="checkbox" id="todoImportant" checked> 중요함</label>
+            </div>
+            <div class="q-preview" id="todoQPreview"></div>
+            <label>카테고리</label>
+            <select id="todoCategory">
+                <option>업무</option>
+                <option>개인</option>
+                <option>기타</option>
+            </select>
+            <label>메모</label>
+            <input type="text" id="todoNote" placeholder="추가 메모">
+            <div class="repeat-section">
+                <label class="switch-label">
+                    반복 할 일
+                    <input type="checkbox" id="todoRepeat">
+                </label>
+                <div class="repeat-options hidden" id="repeatOptions">
+                    <label>반복 요일</label>
+                    <div class="weekday-checks" id="repeatWeekdays"></div>
+                    <label>반복 일자 (매월)</label>
+                    <div class="day-checks" id="repeatDays"></div>
+                </div>
+            </div>
+            <input type="hidden" id="todoDueDate">
+            <input type="hidden" id="todoEditId">
+            <div class="modal-buttons">
+                <button class="btn-cancel" id="todoCancel">취소</button>
+                <button class="btn-primary" id="todoSave">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 모달: 습관 추가 ───────────────────────────── -->
+    <div class="modal-overlay hidden" id="habitModal">
+        <div class="modal modal-sm">
+            <h3>새 습관 추가</h3>
+            <input type="text" id="habitNameInput" placeholder="예: 물 마시기, 운동, 독서">
+            <div class="modal-buttons">
+                <button class="btn-cancel" id="habitCancel">취소</button>
+                <button class="btn-primary" id="habitSave">추가</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
