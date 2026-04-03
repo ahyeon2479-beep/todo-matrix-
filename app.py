@@ -234,6 +234,18 @@ def add_habit():
         user_id=current_user.id).scalar() or 0
     habit = Habit(user_id=current_user.id, name=name, order=max_order + 1)
     db.session.add(habit)
+    # Q4 반복 할일 자동 생성
+    todo = Todo(
+        user_id=current_user.id,
+        title=f"[습관] {name}",
+        category="개인",
+        urgent=False,
+        important=False,
+        repeat=True,
+        repeat_weekdays="[]",
+        repeat_days="[]",
+    )
+    db.session.add(todo)
     db.session.commit()
     return jsonify({"id": habit.id, "name": habit.name}), 201
 
@@ -242,6 +254,12 @@ def add_habit():
 @login_required
 def delete_habit(habit_id):
     habit = Habit.query.filter_by(id=habit_id, user_id=current_user.id).first_or_404()
+    # 연결된 Q4 반복 할일도 삭제
+    linked_todo = Todo.query.filter_by(
+        user_id=current_user.id, title=f"[습관] {habit.name}", repeat=True
+    ).first()
+    if linked_todo:
+        db.session.delete(linked_todo)
     db.session.delete(habit)
     db.session.commit()
     return jsonify({"ok": True})
