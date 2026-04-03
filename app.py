@@ -15,7 +15,9 @@ load_dotenv(Path(__file__).parent / ".env")
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///todos.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+    "DATABASE_URL", "sqlite:///todos.db"
+)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
