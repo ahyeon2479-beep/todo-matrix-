@@ -603,9 +603,12 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
         padding: 0;
         flex: 1;
         height: 100%;
+        width: 100vw;
+        margin-left: calc(-2px);
     }
     .row-label { display: none; }
-    .quadrant { border-radius: 4px; }
+    .quadrant { border-radius: 0; }
+    #matrixView { overflow: hidden; }
     .col-header { font-size: 10px; }
     .q-header { font-size: 10px; }
     .q-item { font-size: 11px; padding: 3px 4px; }
