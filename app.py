@@ -7,7 +7,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 
-from models_db import db, User, Todo, Memo, Habit, HabitCheck
+from models_db import db, User, Todo, Memo, Habit, HabitCheck, BucketItem, Diary, FreeMemo
 from holidays_kr import HOLIDAYS_KR
 
 from pathlib import Path
@@ -306,6 +306,155 @@ def get_habit_checks():
 @app.route("/api/holidays")
 def get_holidays():
     return jsonify(HOLIDAYS_KR)
+
+
+# ── 헬퍼 ─────────────────────────────────────────────────
+
+# ── Bucket List API ───────────────────────────────────────
+
+@app.route("/api/bucket")
+@login_required
+def get_bucket():
+    year = request.args.get("year", date.today().year, type=int)
+    items = BucketItem.query.filter_by(user_id=current_user.id, year=year).order_by(BucketItem.order).all()
+    return jsonify([i.to_dict() for i in items])
+
+
+@app.route("/api/bucket", methods=["POST"])
+@login_required
+def add_bucket():
+    data = request.json
+    text = data.get("text", "").strip()
+    if not text:
+        return jsonify({"error": "내용 필요"}), 400
+    year = data.get("year", date.today().year)
+    max_order = db.session.query(db.func.max(BucketItem.order)).filter_by(
+        user_id=current_user.id, year=year).scalar() or 0
+    item = BucketItem(user_id=current_user.id, text=text, year=year, order=max_order + 1)
+    db.session.add(item)
+    db.session.commit()
+    return jsonify(item.to_dict()), 201
+
+
+@app.route("/api/bucket/<int:item_id>", methods=["PUT"])
+@login_required
+def update_bucket(item_id):
+    item = BucketItem.query.filter_by(id=item_id, user_id=current_user.id).first_or_404()
+    data = request.json
+    if "text" in data:
+        item.text = data["text"]
+    if "completed" in data:
+        item.completed = data["completed"]
+    db.session.commit()
+    return jsonify(item.to_dict())
+
+
+@app.route("/api/bucket/<int:item_id>", methods=["DELETE"])
+@login_required
+def delete_bucket(item_id):
+    item = BucketItem.query.filter_by(id=item_id, user_id=current_user.id).first_or_404()
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+# ── Diary API ─────────────────────────────────────────────
+
+@app.route("/api/diary")
+@login_required
+def get_diaries():
+    year = request.args.get("year", type=int)
+    month = request.args.get("month", type=int)
+    q = Diary.query.filter_by(user_id=current_user.id)
+    if year:
+        q = q.filter(db.extract("year", Diary.created_at) == year)
+    if month:
+        q = q.filter(db.extract("month", Diary.created_at) == month)
+    entries = q.order_by(Diary.date_str.desc()).all()
+    return jsonify([e.to_dict() for e in entries])
+
+
+@app.route("/api/diary/<date_str>")
+@login_required
+def get_diary(date_str):
+    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).first()
+    return jsonify(entry.to_dict() if entry else {})
+
+
+@app.route("/api/diary/<date_str>", methods=["PUT"])
+@login_required
+def save_diary(date_str):
+    data = request.json
+    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).first()
+    if entry:
+        entry.title = data.get("title", entry.title)
+        entry.content = data.get("content", entry.content)
+        entry.mood = data.get("mood", entry.mood)
+        entry.updated_at = datetime.now()
+    else:
+        entry = Diary(
+            user_id=current_user.id, date_str=date_str,
+            title=data.get("title", ""), content=data.get("content", ""),
+            mood=data.get("mood", ""),
+        )
+        db.session.add(entry)
+    db.session.commit()
+    return jsonify(entry.to_dict())
+
+
+@app.route("/api/diary/<date_str>", methods=["DELETE"])
+@login_required
+def delete_diary(date_str):
+    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).first_or_404()
+    db.session.delete(entry)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+# ── Free Memo API ─────────────────────────────────────────
+
+@app.route("/api/free-memos")
+@login_required
+def get_free_memos():
+    memos = FreeMemo.query.filter_by(user_id=current_user.id).order_by(FreeMemo.updated_at.desc()).all()
+    return jsonify([m.to_dict() for m in memos])
+
+
+@app.route("/api/free-memos", methods=["POST"])
+@login_required
+def add_free_memo():
+    data = request.json
+    memo = FreeMemo(
+        user_id=current_user.id,
+        title=data.get("title", "").strip() or "제목 없음",
+        content=data.get("content", ""),
+    )
+    db.session.add(memo)
+    db.session.commit()
+    return jsonify(memo.to_dict()), 201
+
+
+@app.route("/api/free-memos/<int:memo_id>", methods=["PUT"])
+@login_required
+def update_free_memo(memo_id):
+    memo = FreeMemo.query.filter_by(id=memo_id, user_id=current_user.id).first_or_404()
+    data = request.json
+    if "title" in data:
+        memo.title = data["title"]
+    if "content" in data:
+        memo.content = data["content"]
+    memo.updated_at = datetime.now()
+    db.session.commit()
+    return jsonify(memo.to_dict())
+
+
+@app.route("/api/free-memos/<int:memo_id>", methods=["DELETE"])
+@login_required
+def delete_free_memo(memo_id):
+    memo = FreeMemo.query.filter_by(id=memo_id, user_id=current_user.id).first_or_404()
+    db.session.delete(memo)
+    db.session.commit()
+    return jsonify({"ok": True})
 
 
 # ── 헬퍼 ─────────────────────────────────────────────────

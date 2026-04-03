@@ -34,6 +34,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupHabitFull();
     setupRepeatView();
     setupModals();
+    setupDiary();
+    setupFreeMemo();
     showView('matrix');
 });
 
@@ -98,6 +100,14 @@ function showView(name) {
     } else if (name === 'repeat') {
         document.getElementById('repeatView').classList.remove('hidden');
         refreshRepeatView();
+    } else if (name === 'diary') {
+        document.getElementById('diaryView').classList.remove('hidden');
+        document.getElementById('btnDiary').classList.add('active');
+        refreshDiary();
+    } else if (name === 'freeMemo') {
+        document.getElementById('freeMemoView').classList.remove('hidden');
+        document.getElementById('btnFreeMemo').classList.add('active');
+        refreshFreeMemo();
     }
 }
 
@@ -664,3 +674,255 @@ async function saveHabitModal() {
 }
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+/* ══════════════════════════════════════════════════════
+   일기장
+   ══════════════════════════════════════════════════════ */
+let diaryViewMode = 'list'; // 'list' | 'cal'
+let diaryYear, diaryMonth;
+let selectedMood = '';
+
+function setupDiary() {
+    const today = new Date();
+    diaryYear = today.getFullYear();
+    diaryMonth = today.getMonth() + 1;
+
+    // year filter
+    const $yf = document.getElementById('diaryYearFilter');
+    for (let y = today.getFullYear(); y >= today.getFullYear() - 5; y--) {
+        $yf.innerHTML += `<option value="${y}">${y}년</option>`;
+    }
+    $yf.addEventListener('change', () => { diaryYear = +$yf.value; refreshDiary(); });
+
+    const $mf = document.getElementById('diaryMonthFilter');
+    $mf.addEventListener('change', () => { diaryMonth = $mf.value ? +$mf.value : null; refreshDiary(); });
+
+    document.getElementById('diaryToggleView').addEventListener('click', () => {
+        diaryViewMode = diaryViewMode === 'list' ? 'cal' : 'list';
+        document.getElementById('diaryToggleView').textContent = diaryViewMode === 'list' ? '캘린더' : '리스트';
+        refreshDiary();
+    });
+
+    document.getElementById('diaryWriteBtn').addEventListener('click', () => openDiaryModal());
+    document.getElementById('diaryCancel').addEventListener('click', () => document.getElementById('diaryModal').classList.add('hidden'));
+    document.getElementById('diarySave').addEventListener('click', saveDiary);
+
+    // mood selector
+    document.querySelectorAll('.mood-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedMood = btn.dataset.mood;
+        });
+    });
+
+    // bucket
+    document.getElementById('bucketAddBtn').addEventListener('click', addBucket);
+}
+
+async function refreshDiary() {
+    // bucket
+    const year = diaryYear || new Date().getFullYear();
+    document.getElementById('bucketTitle').textContent = `${year}년 올해 반드시 이루겠습니다`;
+    const buckets = await api(`/api/bucket?year=${year}`);
+    const $bl = document.getElementById('bucketList');
+    $bl.innerHTML = '';
+    buckets.forEach(b => {
+        const div = document.createElement('div');
+        div.className = 'bucket-item' + (b.completed ? ' done' : '');
+        div.innerHTML = `<input type="checkbox" ${b.completed ? 'checked' : ''}><span>${esc(b.text)}</span><button>&times;</button>`;
+        div.querySelector('input').addEventListener('change', async () => {
+            await api(`/api/bucket/${b.id}`, {method:'PUT', body:JSON.stringify({completed:!b.completed})});
+            refreshDiary();
+        });
+        div.querySelector('button').addEventListener('click', async () => {
+            if (confirm(`'${b.text}' 삭제?`)) { await api(`/api/bucket/${b.id}`, {method:'DELETE'}); refreshDiary(); }
+        });
+        $bl.appendChild(div);
+    });
+
+    // diary entries
+    let url = `/api/diary?year=${year}`;
+    if (diaryMonth) url += `&month=${diaryMonth}`;
+    const entries = await api(url);
+
+    if (diaryViewMode === 'list') {
+        document.getElementById('diaryListView').classList.remove('hidden');
+        document.getElementById('diaryCalView').classList.add('hidden');
+        renderDiaryList(entries);
+    } else {
+        document.getElementById('diaryListView').classList.add('hidden');
+        document.getElementById('diaryCalView').classList.remove('hidden');
+        renderDiaryCal(entries, year, diaryMonth || new Date().getMonth()+1);
+    }
+}
+
+function renderDiaryList(entries) {
+    const $list = document.getElementById('diaryListView');
+    $list.innerHTML = '';
+    if (!entries.length) { $list.innerHTML = '<div style="color:#999;padding:30px;text-align:center">작성된 일기가 없습니다.</div>'; return; }
+    entries.forEach(e => {
+        const card = document.createElement('div');
+        card.className = 'diary-card';
+        const preview = e.content.length > 80 ? e.content.slice(0, 80) + '…' : e.content;
+        card.innerHTML = `
+            <span class="dc-mood">${e.mood||''}</span>
+            <div class="dc-date">${e.date_str}</div>
+            <div class="dc-title">${esc(e.title || '무제')}</div>
+            <div class="dc-preview">${esc(preview)}</div>
+            <div class="dc-actions">
+                <button class="btn-sm edit-btn">수정</button>
+                <button class="btn-sm del-btn" style="color:#e55">삭제</button>
+            </div>
+        `;
+        card.querySelector('.edit-btn').addEventListener('click', (ev) => { ev.stopPropagation(); openDiaryModal(e); });
+        card.querySelector('.del-btn').addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            if (confirm('이 일기를 삭제할까요?')) { await api(`/api/diary/${e.date_str}`, {method:'DELETE'}); refreshDiary(); }
+        });
+        card.addEventListener('click', () => openDiaryModal(e));
+        $list.appendChild(card);
+    });
+}
+
+function renderDiaryCal(entries, year, month) {
+    const $cal = document.getElementById('diaryCalView');
+    $cal.innerHTML = '';
+    const byDate = {};
+    entries.forEach(e => byDate[e.date_str] = e);
+    const grid = monthGrid(year, month);
+    ['일','월','화','수','목','금','토'].forEach(d => {
+        $cal.innerHTML += `<div class="diary-cal-head">${d}</div>`;
+    });
+    grid.flat().forEach(([day, yr, mo, ov]) => {
+        const ds = `${yr}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const e = byDate[ds];
+        const cell = document.createElement('div');
+        cell.className = 'diary-cal-cell' + (e ? ' has-entry' : '') + (ov ? ' overflow' : '');
+        cell.innerHTML = `<div class="dcc-day">${day}</div>`;
+        if (e) cell.innerHTML += `<div class="dcc-mood">${e.mood||''}</div><div class="dcc-title">${esc(e.title||'')}</div>`;
+        cell.addEventListener('click', () => openDiaryModal(e || {date_str: ds}));
+        $cal.appendChild(cell);
+    });
+}
+
+function openDiaryModal(entry = null) {
+    const $m = document.getElementById('diaryModal');
+    document.getElementById('diaryModalTitle').textContent = entry?.content ? '일기 수정' : '일기 쓰기';
+    document.getElementById('diaryDateInput').value = entry?.date_str || todayStr();
+    document.getElementById('diaryTitleInput').value = entry?.title || '';
+    document.getElementById('diaryContentInput').value = entry?.content || '';
+    document.getElementById('diaryEditDate').value = entry?.date_str || '';
+    selectedMood = entry?.mood || '';
+    document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('selected', b.dataset.mood === selectedMood));
+    $m.classList.remove('hidden');
+    document.getElementById('diaryTitleInput').focus();
+}
+
+async function saveDiary() {
+    const dateStr = document.getElementById('diaryDateInput').value;
+    if (!dateStr) { alert('날짜를 선택해주세요'); return; }
+    const data = {
+        title: document.getElementById('diaryTitleInput').value.trim(),
+        content: document.getElementById('diaryContentInput').value,
+        mood: selectedMood,
+    };
+    await api(`/api/diary/${dateStr}`, {method:'PUT', body:JSON.stringify(data)});
+    document.getElementById('diaryModal').classList.add('hidden');
+    refreshDiary();
+}
+
+async function addBucket() {
+    const text = prompt('버킷리스트를 입력하세요:');
+    if (!text?.trim()) return;
+    await api('/api/bucket', {method:'POST', body:JSON.stringify({text: text.trim(), year: diaryYear || new Date().getFullYear()})});
+    refreshDiary();
+}
+
+/* ══════════════════════════════════════════════════════
+   메모장
+   ══════════════════════════════════════════════════════ */
+function setupFreeMemo() {
+    document.getElementById('memoAddBtn').addEventListener('click', () => openMemoModal());
+    document.getElementById('memoCancel').addEventListener('click', () => document.getElementById('freeMemoModal').classList.add('hidden'));
+    document.getElementById('memoSave').addEventListener('click', saveFreeMemo);
+    document.getElementById('memoPreviewBtn').addEventListener('click', toggleMemoPreview);
+}
+
+async function refreshFreeMemo() {
+    const memos = await api('/api/free-memos');
+    const $list = document.getElementById('freeMemoList');
+    $list.innerHTML = '';
+    if (!memos.length) { $list.innerHTML = '<div style="color:#999;padding:30px;text-align:center">메모가 없습니다.<br>\'+ 메모 등록\' 버튼으로 추가하세요.</div>'; return; }
+    memos.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'memo-card';
+        const preview = renderMarkdown(m.content).replace(/<[^>]*>/g, '');
+        const shortPreview = preview.length > 100 ? preview.slice(0, 100) + '…' : preview;
+        const dateStr = m.updated_at ? new Date(m.updated_at).toLocaleDateString('ko') : '';
+        card.innerHTML = `
+            <div class="mc-title">${esc(m.title)}</div>
+            <div class="mc-preview">${esc(shortPreview)}</div>
+            <div class="mc-date">${dateStr}</div>
+            <div class="mc-actions">
+                <button class="btn-sm edit-btn">수정</button>
+                <button class="btn-sm del-btn" style="color:#e55">삭제</button>
+            </div>
+        `;
+        card.querySelector('.edit-btn').addEventListener('click', (ev) => { ev.stopPropagation(); openMemoModal(m); });
+        card.querySelector('.del-btn').addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            if (confirm(`'${m.title}' 삭제?`)) { await api(`/api/free-memos/${m.id}`, {method:'DELETE'}); refreshFreeMemo(); }
+        });
+        card.addEventListener('click', () => openMemoModal(m));
+        $list.appendChild(card);
+    });
+}
+
+function openMemoModal(memo = null) {
+    const $m = document.getElementById('freeMemoModal');
+    document.getElementById('memoModalTitle').textContent = memo ? '메모 수정' : '메모 등록';
+    document.getElementById('memoTitleInput').value = memo?.title || '';
+    document.getElementById('memoContentInput').value = memo?.content || '';
+    document.getElementById('memoEditId').value = memo?.id || '';
+    document.getElementById('memoPreview').classList.add('hidden');
+    $m.classList.remove('hidden');
+    document.getElementById('memoTitleInput').focus();
+}
+
+async function saveFreeMemo() {
+    const data = {
+        title: document.getElementById('memoTitleInput').value.trim(),
+        content: document.getElementById('memoContentInput').value,
+    };
+    const editId = document.getElementById('memoEditId').value;
+    if (editId) {
+        await api(`/api/free-memos/${editId}`, {method:'PUT', body:JSON.stringify(data)});
+    } else {
+        await api('/api/free-memos', {method:'POST', body:JSON.stringify(data)});
+    }
+    document.getElementById('freeMemoModal').classList.add('hidden');
+    refreshFreeMemo();
+}
+
+function toggleMemoPreview() {
+    const $p = document.getElementById('memoPreview');
+    const content = document.getElementById('memoContentInput').value;
+    if ($p.classList.contains('hidden')) {
+        $p.innerHTML = renderMarkdown(content);
+        $p.classList.remove('hidden');
+    } else {
+        $p.classList.add('hidden');
+    }
+}
+
+function renderMarkdown(text) {
+    return text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/~~(.+?)~~/g, '<del>$1</del>')
+        .replace(/`(.+?)`/g, '<code>$1</code>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+        .replace(/\n/g, '<br>');
+}

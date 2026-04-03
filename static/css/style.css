@@ -549,6 +549,86 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
     font-family: 'Malgun Gothic', sans-serif;
 }
 
+/* ── Diary Page ──────────────────────────────────────── */
+.diary-page { padding: 16px; max-width: 900px; margin: 0 auto; }
+.bucket-section { margin-bottom: 12px; }
+.bucket-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.bucket-header h2 { font-size: 16px; color: #1A73E8; }
+.bucket-list { display: flex; flex-direction: column; gap: 4px; }
+.bucket-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; background: #f0f7ff; border-radius: 6px; font-size: 13px;
+}
+.bucket-item.done { text-decoration: line-through; opacity: 0.5; }
+.bucket-item input { cursor: pointer; }
+.bucket-item span { flex: 1; }
+.bucket-item button { background: none; border: none; cursor: pointer; color: #ccc; font-size: 14px; }
+.bucket-item button:hover { color: #e55; }
+
+.diary-section { margin-top: 12px; }
+.diary-toolbar {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+}
+.diary-toolbar h2 { font-size: 16px; margin-right: auto; }
+.diary-filters { display: flex; gap: 4px; }
+.diary-filters select {
+    padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;
+    font-size: 12px; font-family: 'Malgun Gothic', sans-serif;
+}
+.diary-view-toggle { font-size: 11px; }
+
+.diary-list { display: flex; flex-direction: column; gap: 8px; }
+.diary-card {
+    background: white; border: 1px solid #e0e0e0; border-radius: 10px;
+    padding: 14px; cursor: pointer; transition: border-color 0.15s;
+}
+.diary-card:hover { border-color: #1A73E8; }
+.diary-card .dc-date { font-size: 11px; color: #999; }
+.diary-card .dc-title { font-size: 14px; font-weight: bold; margin: 4px 0; }
+.diary-card .dc-preview { font-size: 12px; color: #666; line-height: 1.5; max-height: 40px; overflow: hidden; }
+.diary-card .dc-mood { font-size: 18px; float: right; }
+.diary-card .dc-actions { margin-top: 6px; display: flex; gap: 4px; }
+
+.diary-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.diary-cal-head { text-align: center; font-size: 11px; font-weight: bold; color: #888; padding: 4px; }
+.diary-cal-cell {
+    min-height: 60px; background: white; border: 1px solid #eee; border-radius: 4px;
+    padding: 4px; font-size: 10px; cursor: pointer;
+}
+.diary-cal-cell:hover { border-color: #1A73E8; }
+.diary-cal-cell .dcc-day { font-size: 11px; font-weight: bold; }
+.diary-cal-cell .dcc-mood { font-size: 14px; }
+.diary-cal-cell .dcc-title { font-size: 9px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.diary-cal-cell.has-entry { background: #f8f4ff; }
+
+.mood-selector { display: flex; gap: 8px; padding: 4px 0; }
+.mood-btn { font-size: 24px; cursor: pointer; padding: 4px; border-radius: 6px; opacity: 0.5; }
+.mood-btn.selected { opacity: 1; background: #eee; }
+.mood-btn:hover { opacity: 1; }
+
+/* ── Free Memo Page ──────────────────────────────────── */
+.memo-page { padding: 16px; max-width: 900px; margin: 0 auto; }
+.memo-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.memo-header h2 { font-size: 16px; }
+.memo-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.memo-card {
+    background: white; border: 1px solid #e0e0e0; border-radius: 10px;
+    padding: 14px; cursor: pointer; transition: border-color 0.15s;
+    max-height: 200px; overflow: hidden;
+}
+.memo-card:hover { border-color: #1A73E8; }
+.memo-card .mc-title { font-size: 14px; font-weight: bold; margin-bottom: 6px; }
+.memo-card .mc-preview { font-size: 12px; color: #666; line-height: 1.5; }
+.memo-card .mc-date { font-size: 10px; color: #bbb; margin-top: 8px; }
+.memo-card .mc-actions { margin-top: 6px; display: flex; gap: 4px; }
+.memo-preview { background: #fafafa; border: 1px solid #eee; border-radius: 6px; padding: 12px; font-size: 13px; line-height: 1.6; }
+.memo-preview a { color: #1A73E8; }
+.memo-preview-toggle { margin: 8px 0; }
+.modal textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px;
+    font-size: 13px; font-family: 'Malgun Gothic', sans-serif; resize: vertical;
+}
+
 /* ── Repeat Options ──────────────────────────────────── */
 .repeat-section { margin-top: 12px; border-top: 1px solid #eee; padding-top: 8px; }
 .switch-label { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #333; }
