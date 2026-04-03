@@ -503,6 +503,7 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    animation: none;
 }
 .modal {
     background: white;
@@ -511,6 +512,9 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
     width: 420px;
     max-height: 90vh;
     overflow-y: auto;
+    animation: none;
+    transform: none;
+    transition: none;
 }
 .modal-sm { width: 320px; }
 .modal h3 { font-size: 16px; margin-bottom: 16px; }
@@ -601,11 +605,13 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
         font-size: 11px;
     }
     .matrix-grid {
-        grid-template-columns: 30px 1fr 1fr;
-        grid-template-rows: 180px 180px;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 200px 200px;
         gap: 4px;
     }
-    .row-label { font-size: 9px; }
+    .matrix-col-headers { grid-template-columns: 1fr 1fr; }
+    .matrix-col-headers .row-label { display: none; }
+    .row-label { display: none; }
     .col-header { font-size: 10px; }
     .q-header { font-size: 10px; }
     .q-item { font-size: 11px; padding: 3px 4px; }
