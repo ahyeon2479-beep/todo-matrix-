@@ -127,6 +127,11 @@ async function refreshMatrix() {
         const u = q.dataset.urgent === 'true';
         const imp = q.dataset.important === 'true';
         const items = todos.filter(t => t.urgent === u && t.important === imp && (show || !t.completed));
+        items.sort((a, b) => {
+            const aHabit = a.title.startsWith('[습관]') ? 1 : 0;
+            const bHabit = b.title.startsWith('[습관]') ? 1 : 0;
+            return aHabit - bHabit;
+        });
         const $items = q.querySelector('.q-items');
         $items.innerHTML = '';
         items.forEach(t => {
