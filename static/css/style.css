@@ -155,7 +155,7 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
 
 /* ── Matrix Layout ───────────────────────────────────── */
 .matrix-layout { display: flex; height: 100%; }
-.matrix-main { flex: 1; display: flex; flex-direction: column; padding: 8px; max-width: 800px; }
+.matrix-main { flex: 1; display: flex; flex-direction: column; padding: 8px; max-width: 860px; margin: 0 auto; }
 .matrix-date-bar {
     display: flex;
     align-items: center;
@@ -174,8 +174,8 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
 .col-header { text-align: center; font-size: 12px; font-weight: bold; color: #666; }
 .matrix-grid {
     display: grid;
-    grid-template-columns: 60px 1fr 1fr;
-    grid-template-rows: 260px 260px;
+    grid-template-columns: 50px 1fr 1fr;
+    grid-template-rows: 220px 220px;
     gap: 6px;
     padding: 0 4px;
 }
