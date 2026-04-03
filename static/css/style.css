@@ -588,25 +588,24 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
     .user-info { font-size: 11px; margin-left: 0; }
 
     /* ── 메인 콘텐츠 ──────────────────────── */
-    .main-content { height: auto; overflow: auto; }
+    .main-content { height: calc(100vh - 90px); overflow: hidden; }
 
-    /* ── 매트릭스: 사이드바 숨기고 풀스크린 ─── */
-    .matrix-layout { flex-direction: column; }
+    /* ── 매트릭스: 풀스크린 ────────────────── */
+    .matrix-layout { flex-direction: column; height: 100%; }
     .matrix-layout .sidebar { display: none; }
-    .matrix-main { max-width: 100% !important; padding: 0 2px; }
-    .matrix-date-bar {
-        font-size: 11px;
-        gap: 4px;
-        padding: 4px;
-    }
+    .matrix-main { max-width: 100% !important; padding: 0; height: 100%; display: flex; flex-direction: column; }
+    .matrix-date-bar { display: none; }
     .matrix-col-headers { display: none; }
     .matrix-grid {
         grid-template-columns: 1fr 1fr !important;
-        grid-template-rows: calc(40vh) calc(40vh) !important;
-        gap: 3px;
-        padding: 0 2px;
+        grid-template-rows: 1fr 1fr !important;
+        gap: 2px;
+        padding: 0;
+        flex: 1;
+        height: 100%;
     }
     .row-label { display: none; }
+    .quadrant { border-radius: 4px; }
     .col-header { font-size: 10px; }
     .q-header { font-size: 10px; }
     .q-item { font-size: 11px; padding: 3px 4px; }
