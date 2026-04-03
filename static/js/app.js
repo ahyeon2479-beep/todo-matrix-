@@ -366,6 +366,47 @@ async function refreshHabitFull() {
     const today = new Date();
     const isCurMonth = habitYear === today.getFullYear() && habitMonth === today.getMonth()+1;
 
+    // ── 이번 주 빠른 체크 (모바일 상단) ──
+    const $hq = document.getElementById('habitQuick');
+    if ($hq) {
+        const nowWeeks = getWeeks(today.getFullYear(), today.getMonth()+1);
+        const nowIdx = getCurrentWeekIndex(nowWeeks);
+        const nowWeek = nowWeeks[nowIdx];
+        if (nowWeek && habits.length) {
+            const nowDates = nowWeek[1];
+            const nowChecks = await api(`/api/habits/checks?dates=${nowDates.join(',')}`);
+            const d0 = dateObj(nowDates[0]), d6 = dateObj(nowDates[6]);
+            const range = `${d0.getMonth()+1}/${d0.getDate()} ~ ${d6.getMonth()+1}/${d6.getDate()}`;
+            let hqHtml = `<div class="habit-quick-card">`;
+            hqHtml += `<div class="hq-title">✅ 이번 주 습관 체크</div>`;
+            hqHtml += `<div class="hq-range">${nowWeek[0]} (${range})</div>`;
+            hqHtml += `<table class="hq-table"><tr><th></th>`;
+            nowDates.forEach((ds, i) => {
+                const cls = i===6?'sun':i===5?'sat':'';
+                hqHtml += `<th class="${cls}">${WD[i]}</th>`;
+            });
+            hqHtml += `</tr>`;
+            habits.forEach(h => {
+                hqHtml += `<tr><td class="habit-name-full">${esc(h.name)}</td>`;
+                nowDates.forEach(ds => {
+                    const checked = nowChecks[`${h.id}|${ds}`];
+                    hqHtml += `<td><span class="stamp ${checked?'checked':'unchecked'}" data-hid="${h.id}" data-date="${ds}">${checked?'◎':'□'}</span></td>`;
+                });
+                hqHtml += `</tr>`;
+            });
+            hqHtml += `</table></div>`;
+            $hq.innerHTML = hqHtml;
+            $hq.querySelectorAll('.stamp').forEach(el => {
+                el.addEventListener('click', async () => {
+                    await api(`/api/habits/${el.dataset.hid}/toggle`, {method:'POST', body:JSON.stringify({date:el.dataset.date})});
+                    refreshHabitFull();
+                });
+            });
+        } else {
+            $hq.innerHTML = '';
+        }
+    }
+
     // Chips
     const $chips = document.getElementById('habitChips');
     $chips.innerHTML = '';

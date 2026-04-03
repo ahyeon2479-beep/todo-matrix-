@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip show:*)",
+      "Bash(python -c \"import tkinter; print\\('tkinter OK'\\)\")",
+      "Bash(python -c ':*)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('c:/Users/user1/OneDrive/Desktop/클로드 코딩/ui_components.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('c:/Users/user1/OneDrive/Desktop/클로드 코딩/main.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(timeout 5 python main.py)"
+    ]
+  }
+}
