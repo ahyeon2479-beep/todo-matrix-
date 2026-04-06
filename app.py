@@ -18,7 +18,9 @@ app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
 _db_url = os.getenv("DATABASE_URL", "sqlite:///todos.db")
 # Render/Heroku에서 postgres:// 를 postgresql:// 로 변환
 if _db_url.startswith("postgres://"):
-    _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+    _db_url = _db_url.replace("postgres://", "postgresql+psycopg://", 1)
+elif _db_url.startswith("postgresql://") and "+psycopg" not in _db_url:
+    _db_url = _db_url.replace("postgresql://", "postgresql+psycopg://", 1)
 app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
