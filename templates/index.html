@@ -212,31 +212,41 @@
         </div>
     </main>
 
-    <!-- ── 모달: 일기 작성 ───────────────────────────── -->
-    <div class="modal-overlay hidden" id="diaryModal">
-        <div class="modal">
-            <h3 id="diaryModalTitle">일기 쓰기</h3>
-            <label>날짜</label>
-            <input type="date" id="diaryDateInput">
-            <label>제목</label>
-            <input type="text" id="diaryTitleInput" placeholder="오늘의 한 줄">
-            <label>기분</label>
-            <div class="mood-selector" id="moodSelector">
-                <span data-mood="😊" class="mood-btn">😊</span>
-                <span data-mood="😐" class="mood-btn">😐</span>
-                <span data-mood="😢" class="mood-btn">😢</span>
-                <span data-mood="😡" class="mood-btn">😡</span>
-                <span data-mood="🥰" class="mood-btn">🥰</span>
-                <span data-mood="😴" class="mood-btn">😴</span>
+    <!-- ── 일기 작성 전체 페이지 ─────────────────────── -->
+    <div class="diary-editor hidden" id="diaryEditor">
+        <div class="de-header">
+            <button class="de-back" id="diaryCancel">&#9664; 돌아가기</button>
+            <span class="de-title-label" id="diaryModalTitle">일기 쓰기</span>
+            <div class="de-nav">
+                <button class="btn-sm" id="diaryPrevDay">&#9664; 어제</button>
+                <button class="btn-sm" id="diaryNextDay">내일 &#9654;</button>
             </div>
-            <label>내용</label>
-            <textarea id="diaryContentInput" rows="8" placeholder="오늘 하루를 기록해보세요..."></textarea>
-            <input type="hidden" id="diaryEditDate">
-            <div class="modal-buttons">
-                <button class="btn-cancel" id="diaryCancel">취소</button>
-                <button class="btn-primary" id="diarySave">저장</button>
+            <button class="btn-primary" id="diarySave">저장</button>
+        </div>
+        <div class="de-body">
+            <div class="de-sidebar">
+                <label>날짜</label>
+                <input type="date" id="diaryDateInput">
+                <label>오늘의 기분</label>
+                <div class="mood-selector" id="moodSelector">
+                    <span data-mood="😊" class="mood-btn" title="좋음">😊</span>
+                    <span data-mood="😐" class="mood-btn" title="보통">😐</span>
+                    <span data-mood="😢" class="mood-btn" title="슬픔">😢</span>
+                    <span data-mood="😡" class="mood-btn" title="화남">😡</span>
+                    <span data-mood="🥰" class="mood-btn" title="행복">🥰</span>
+                    <span data-mood="😴" class="mood-btn" title="피곤">😴</span>
+                    <span data-mood="🤔" class="mood-btn" title="고민">🤔</span>
+                    <span data-mood="🎉" class="mood-btn" title="신남">🎉</span>
+                </div>
+                <label>제목</label>
+                <input type="text" id="diaryTitleInput" placeholder="오늘의 한 줄">
+                <input type="hidden" id="diaryEditDate">
+            </div>
+            <div class="de-content">
+                <textarea id="diaryContentInput" placeholder="오늘 하루를 기록해보세요...&#10;&#10;무슨 일이 있었나요?&#10;어떤 생각을 했나요?&#10;감사한 일은 무엇인가요?"></textarea>
             </div>
         </div>
+        <div class="de-toast hidden" id="diaryToast">저장되었습니다 ✓</div>
     </div>
 
     <!-- ── 모달: 메모 작성 ───────────────────────────── -->

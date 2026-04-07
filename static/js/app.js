@@ -704,8 +704,10 @@ function setupDiary() {
     });
 
     document.getElementById('diaryWriteBtn').addEventListener('click', () => openDiaryModal());
-    document.getElementById('diaryCancel').addEventListener('click', () => document.getElementById('diaryModal').classList.add('hidden'));
+    document.getElementById('diaryCancel').addEventListener('click', closeDiaryEditor);
     document.getElementById('diarySave').addEventListener('click', saveDiary);
+    document.getElementById('diaryPrevDay').addEventListener('click', () => navDiaryDay(-1));
+    document.getElementById('diaryNextDay').addEventListener('click', () => navDiaryDay(1));
 
     // mood selector
     document.querySelectorAll('.mood-btn').forEach(btn => {
@@ -807,7 +809,7 @@ function renderDiaryCal(entries, year, month) {
 }
 
 function openDiaryModal(entry = null) {
-    const $m = document.getElementById('diaryModal');
+    const $e = document.getElementById('diaryEditor');
     document.getElementById('diaryModalTitle').textContent = entry?.content ? '일기 수정' : '일기 쓰기';
     document.getElementById('diaryDateInput').value = entry?.date_str || todayStr();
     document.getElementById('diaryTitleInput').value = entry?.title || '';
@@ -815,8 +817,20 @@ function openDiaryModal(entry = null) {
     document.getElementById('diaryEditDate').value = entry?.date_str || '';
     selectedMood = entry?.mood || '';
     document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('selected', b.dataset.mood === selectedMood));
-    $m.classList.remove('hidden');
-    document.getElementById('diaryTitleInput').focus();
+    $e.classList.remove('hidden');
+    setTimeout(() => document.getElementById('diaryContentInput').focus(), 100);
+}
+
+function closeDiaryEditor() {
+    document.getElementById('diaryEditor').classList.add('hidden');
+    refreshDiary();
+}
+
+async function navDiaryDay(delta) {
+    const current = document.getElementById('diaryDateInput').value || todayStr();
+    const newDate = shiftDate(current, delta);
+    const entry = await api(`/api/diary/${newDate}`);
+    openDiaryModal(entry?.date_str ? entry : { date_str: newDate });
 }
 
 async function saveDiary() {
@@ -828,8 +842,13 @@ async function saveDiary() {
         mood: selectedMood,
     };
     await api(`/api/diary/${dateStr}`, {method:'PUT', body:JSON.stringify(data)});
-    document.getElementById('diaryModal').classList.add('hidden');
-    refreshDiary();
+    // 토스트 메시지
+    const $toast = document.getElementById('diaryToast');
+    $toast.classList.remove('hidden');
+    $toast.style.animation = 'none';
+    $toast.offsetHeight; // reflow
+    $toast.style.animation = 'fadeOut 2s ease-in-out forwards';
+    setTimeout(() => $toast.classList.add('hidden'), 2200);
 }
 
 async function addBucket() {
