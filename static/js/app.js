@@ -819,6 +819,27 @@ function openDiaryModal(entry = null) {
     document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('selected', b.dataset.mood === selectedMood));
     $e.classList.remove('hidden');
     setTimeout(() => document.getElementById('diaryContentInput').focus(), 100);
+    loadDaySummary(document.getElementById('diaryDateInput').value);
+}
+
+async function loadDaySummary(dateStr) {
+    try {
+        const todos = await api(`/api/todos?date=${dateStr}`);
+        const total = todos.length;
+        const done = todos.filter(t => t.completed).length;
+        document.getElementById('desTodo').textContent = `${total}개`;
+        document.getElementById('desDone').textContent = `${done}/${total}`;
+        const habits = await api('/api/habits');
+        if (habits.length) {
+            const checks = await api(`/api/habits/checks?dates=${dateStr}`);
+            const checked = Object.values(checks).filter(v => v).length;
+            document.getElementById('desHabit').textContent = `${checked}/${habits.length}`;
+        } else {
+            document.getElementById('desHabit').textContent = '-';
+        }
+    } catch (e) {
+        console.log('summary load error', e);
+    }
 }
 
 function closeDiaryEditor() {

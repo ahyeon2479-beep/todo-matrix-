@@ -238,11 +238,17 @@
                     <span data-mood="🤔" class="mood-btn" title="고민">🤔</span>
                     <span data-mood="🎉" class="mood-btn" title="신남">🎉</span>
                 </div>
-                <label>제목</label>
-                <input type="text" id="diaryTitleInput" placeholder="오늘의 한 줄">
                 <input type="hidden" id="diaryEditDate">
+                <hr>
+                <label>오늘 하루 요약</label>
+                <div class="de-summary" id="deSummary">
+                    <div class="des-item"><span class="des-label">할 일</span><span class="des-value" id="desTodo">-</span></div>
+                    <div class="des-item"><span class="des-label">완료</span><span class="des-value des-done" id="desDone">-</span></div>
+                    <div class="des-item"><span class="des-label">습관</span><span class="des-value des-habit" id="desHabit">-</span></div>
+                </div>
             </div>
             <div class="de-content">
+                <input type="text" id="diaryTitleInput" class="de-title-input" placeholder="오늘의 한 줄 제목을 입력하세요">
                 <textarea id="diaryContentInput" placeholder="오늘 하루를 기록해보세요...&#10;&#10;무슨 일이 있었나요?&#10;어떤 생각을 했나요?&#10;감사한 일은 무엇인가요?"></textarea>
             </div>
         </div>
