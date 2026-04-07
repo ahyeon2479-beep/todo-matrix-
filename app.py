@@ -15,13 +15,16 @@ load_dotenv(Path(__file__).parent / ".env")
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
-_db_url = os.getenv("DATABASE_URL", "sqlite:///todos.db")
-# Render/Heroku에서 postgres:// 를 postgresql:// 로 변환
-if _db_url.startswith("postgres://"):
-    _db_url = _db_url.replace("postgres://", "postgresql://", 1)
-app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
+_db_url = os.getenv("DATABASE_URL", "")
+if _db_url:
+    # Render/Heroku에서 postgres:// 를 postgresql:// 로 변환
+    if _db_url.startswith("postgres://"):
+        _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///todos.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True, "connect_args": {}}
 
 DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
 
@@ -481,7 +484,11 @@ def _matches_repeat(todo, date_str):
 # ── 앱 실행 ──────────────────────────────────────────────
 
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+        print("DB tables created successfully")
+    except Exception as e:
+        print(f"DB create_all error: {e}")
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
