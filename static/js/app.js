@@ -723,7 +723,7 @@ function setupDiary() {
 async function refreshDiary() {
     // bucket
     const year = diaryYear || new Date().getFullYear();
-    document.getElementById('bucketTitle').textContent = `${year}년 올해 반드시 이루겠습니다`;
+    document.getElementById('bucketTitle').textContent = `올해 반드시 이루겠습니다`;
     const buckets = await api(`/api/bucket?year=${year}`);
     const $bl = document.getElementById('bucketList');
     $bl.innerHTML = '';
