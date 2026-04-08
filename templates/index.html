@@ -259,6 +259,24 @@
         <div class="de-toast hidden" id="diaryToast">저장되었습니다 ✓</div>
     </div>
 
+    <!-- ── 모달: 일기 읽기 ───────────────────────────── -->
+    <div class="modal-overlay hidden" id="diaryReadModal">
+        <div class="diary-read-popup">
+            <button class="dr-close-btn">&times;</button>
+            <div class="dr-header">
+                <span class="dr-mood" id="drMood"></span>
+                <span class="dr-date" id="drDate"></span>
+            </div>
+            <h2 class="dr-title" id="drTitle"></h2>
+            <div class="dr-content" id="drContent"></div>
+            <div class="dc-event hidden" id="drEvent"></div>
+            <div class="dr-actions">
+                <button class="btn-sm dr-edit-btn">수정</button>
+                <button class="btn-sm dr-delete-btn" style="color:#e55">삭제</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ── 모달: 메모 작성 ───────────────────────────── -->
     <div class="modal-overlay hidden" id="freeMemoModal">
         <div class="modal">

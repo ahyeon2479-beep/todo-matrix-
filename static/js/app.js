@@ -801,44 +801,39 @@ function renderDiaryList(entries) {
     entries.forEach(e => {
         const card = document.createElement('div');
         card.className = 'diary-card';
-        const preview = e.content.length > 60 ? e.content.slice(0, 60) + '…' : e.content;
-        const contentHtml = esc(e.content || '').replace(/\n/g, '<br>');
-        const eventHtml = e.event ? `<div class="dc-event"><span class="dc-event-label">이벤트</span>${esc(e.event).replace(/\n/g, '<br>')}</div>` : '';
         card.innerHTML = `
-            <div class="dc-header">
-                <div>
-                    <div class="dc-date">${e.date_str}</div>
-                    <div class="dc-title">${e.mood ? e.mood + ' ' : ''}${esc(e.title || '무제')}</div>
-                </div>
-                <span class="dc-toggle">▼</span>
-            </div>
-            <div class="dc-preview">${esc(preview)}</div>
-            <div class="dc-body hidden">
-                <div class="dc-content">${contentHtml}</div>
-                ${eventHtml}
-                <div class="dc-actions">
-                    <button class="btn-sm edit-btn">수정</button>
-                    <button class="btn-sm del-btn" style="color:#e55">삭제</button>
-                </div>
-            </div>
+            <div class="dc-date">${e.date_str}</div>
+            <div class="dc-title">${e.mood ? e.mood + ' ' : ''}${esc(e.title || '무제')}</div>
         `;
-        card.addEventListener('click', (ev) => {
-            if (ev.target.closest('.dc-actions')) return;
-            const body = card.querySelector('.dc-body');
-            const previewEl = card.querySelector('.dc-preview');
-            const toggle = card.querySelector('.dc-toggle');
-            const open = body.classList.toggle('hidden');
-            previewEl.classList.toggle('hidden', !open);
-            toggle.textContent = open ? '▼' : '▲';
-            card.classList.toggle('expanded', !open);
-        });
-        card.querySelector('.edit-btn').addEventListener('click', (ev) => { ev.stopPropagation(); openDiaryModal(e); });
-        card.querySelector('.del-btn').addEventListener('click', async (ev) => {
-            ev.stopPropagation();
-            if (confirm('이 일기를 삭제할까요?')) { await api(`/api/diary/${e.date_str}`, {method:'DELETE'}); refreshDiary(); }
-        });
+        card.addEventListener('click', () => openDiaryReadModal(e));
         $list.appendChild(card);
     });
+}
+
+function openDiaryReadModal(e) {
+    const $m = document.getElementById('diaryReadModal');
+    document.getElementById('drDate').textContent = e.date_str;
+    document.getElementById('drMood').textContent = e.mood || '';
+    document.getElementById('drTitle').textContent = e.title || '무제';
+    document.getElementById('drContent').innerHTML = esc(e.content || '').replace(/\n/g, '<br>');
+    const $event = document.getElementById('drEvent');
+    if (e.event) {
+        $event.innerHTML = `<span class="dc-event-label">이벤트</span>${esc(e.event).replace(/\n/g, '<br>')}`;
+        $event.classList.remove('hidden');
+    } else {
+        $event.classList.add('hidden');
+    }
+    $m.classList.remove('hidden');
+    $m.querySelector('.dr-edit-btn').onclick = () => { $m.classList.add('hidden'); openDiaryModal(e); };
+    $m.querySelector('.dr-delete-btn').onclick = async () => {
+        if (confirm('이 일기를 삭제할까요?')) {
+            await api(`/api/diary/${e.date_str}`, {method:'DELETE'});
+            $m.classList.add('hidden');
+            refreshDiary();
+        }
+    };
+    $m.querySelector('.dr-close-btn').onclick = () => $m.classList.add('hidden');
+    $m.addEventListener('click', (ev) => { if (ev.target === $m) $m.classList.add('hidden'); });
 }
 
 function renderDiaryCal(entries, year, month) {
