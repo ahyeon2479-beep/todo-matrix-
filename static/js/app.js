@@ -732,12 +732,47 @@ async function refreshDiary() {
     buckets.forEach(b => {
         const div = document.createElement('div');
         div.className = 'bucket-item' + (b.completed ? ' done' : '');
-        div.innerHTML = `<input type="checkbox" ${b.completed ? 'checked' : ''}><span>${esc(b.text)}</span><button>&times;</button>`;
+        div.innerHTML = `<input type="checkbox" ${b.completed ? 'checked' : ''}><span>${esc(b.text)}</span><button class="bucket-edit-btn" title="수정">✎</button><button class="bucket-del-btn" title="삭제">&times;</button>`;
         div.querySelector('input').addEventListener('change', async () => {
             await api(`/api/bucket/${b.id}`, {method:'PUT', body:JSON.stringify({completed:!b.completed})});
             refreshDiary();
         });
-        div.querySelector('button').addEventListener('click', async () => {
+        div.querySelector('.bucket-edit-btn').addEventListener('click', () => {
+            const span = div.querySelector('span');
+            const oldText = b.text;
+            span.style.display = 'none';
+            div.querySelector('.bucket-edit-btn').style.display = 'none';
+            div.querySelector('.bucket-del-btn').style.display = 'none';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = oldText;
+            input.className = 'bucket-edit-input';
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'bucket-save-btn';
+            saveBtn.textContent = '✓';
+            saveBtn.title = '저장';
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'bucket-cancel-btn';
+            cancelBtn.textContent = '✕';
+            cancelBtn.title = '취소';
+            span.after(input, saveBtn, cancelBtn);
+            input.focus();
+            const save = async () => {
+                const newText = input.value.trim();
+                if (newText && newText !== oldText) {
+                    await api(`/api/bucket/${b.id}`, {method:'PUT', body:JSON.stringify({text: newText})});
+                }
+                refreshDiary();
+            };
+            const cancel = () => refreshDiary();
+            saveBtn.addEventListener('click', save);
+            cancelBtn.addEventListener('click', cancel);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') save();
+                if (e.key === 'Escape') cancel();
+            });
+        });
+        div.querySelector('.bucket-del-btn').addEventListener('click', async () => {
             if (confirm(`'${b.text}' 삭제?`)) { await api(`/api/bucket/${b.id}`, {method:'DELETE'}); refreshDiary(); }
         });
         $bl.appendChild(div);
