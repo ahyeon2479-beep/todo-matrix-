@@ -524,8 +524,12 @@ with app.app_context():
         db.create_all()
         # 기존 diary 테이블에 event 컬럼이 없으면 추가
         try:
-            db.session.execute(db.text("ALTER TABLE diary ADD COLUMN event TEXT DEFAULT ''"))
-            db.session.commit()
+            from sqlalchemy import inspect
+            insp = inspect(db.engine)
+            cols = [c['name'] for c in insp.get_columns('diary')]
+            if 'event' not in cols:
+                db.session.execute(db.text("ALTER TABLE diary ADD COLUMN event TEXT DEFAULT ''"))
+                db.session.commit()
         except Exception:
             db.session.rollback()
         print("DB tables created successfully")

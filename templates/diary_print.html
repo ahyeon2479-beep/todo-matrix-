@@ -101,9 +101,9 @@
             {
                 id: {{ e.id }},
                 date_str: "{{ e.date_str }}",
-                title: {{ e.title|tojson }},
-                content: {{ e.content|tojson }},
-                mood: "{{ e.mood or '' }}",
+                title: {{ (e.title or '')|tojson }},
+                content: {{ (e.content or '')|tojson }},
+                mood: {{ (e.mood or '')|tojson }},
                 event: {{ (e.event or '')|tojson }}
             },
             {% endfor %}
