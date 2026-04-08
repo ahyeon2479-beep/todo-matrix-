@@ -79,7 +79,7 @@ function setupHeader() {
     });
     hMenu.querySelector('[data-action="repeatView"]').addEventListener('click', () => { hMenu.classList.add('hidden'); showView('repeat'); });
     hMenu.querySelector('[data-action="habitFullView"]').addEventListener('click', () => { hMenu.classList.add('hidden'); showView('habitFull'); });
-    hMenu.querySelector('[data-action="diaryExport"]').addEventListener('click', () => { hMenu.classList.add('hidden'); location.href = '/diary/export'; });
+    hMenu.querySelector('[data-action="diaryExport"]').addEventListener('click', () => { hMenu.classList.add('hidden'); showView('diaryExport'); });
 }
 
 function showView(name) {
@@ -109,6 +109,9 @@ function showView(name) {
         document.getElementById('freeMemoView').classList.remove('hidden');
         document.getElementById('btnFreeMemo').classList.add('active');
         refreshFreeMemo();
+    } else if (name === 'diaryExport') {
+        document.getElementById('diaryExportView').classList.remove('hidden');
+        refreshExport();
     }
 }
 
@@ -706,7 +709,7 @@ function setupDiary() {
 
     document.getElementById('diaryWriteBtn').addEventListener('click', () => openDiaryModal());
     document.getElementById('diaryDownloadBtn').addEventListener('click', () => {
-        location.href = '/diary/export';
+        showView('diaryExport');
     });
     document.getElementById('diaryCancel').addEventListener('click', closeDiaryEditor);
     document.getElementById('diarySave').addEventListener('click', saveDiary);
@@ -1029,4 +1032,112 @@ function renderMarkdown(text) {
         .replace(/`(.+?)`/g, '<code>$1</code>')
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
         .replace(/\n/g, '<br>');
+}
+
+/* ── Diary Export ──────────────────────────────────────── */
+let exportEntries = [];
+
+async function refreshExport() {
+    exportEntries = await api('/api/diary?year=');
+    const $yearFilter = document.getElementById('exportYearFilter');
+    const years = [...new Set(exportEntries.map(e => e.date_str.slice(0, 4)))].sort().reverse();
+    $yearFilter.innerHTML = '<option value="">전체 연도</option>';
+    years.forEach(y => { $yearFilter.innerHTML += `<option value="${y}">${y}년</option>`; });
+    document.getElementById('exportSelectAll').checked = false;
+    renderExportList();
+
+    document.getElementById('exportBackBtn').onclick = () => showView('diary');
+    document.getElementById('exportYearFilter').onchange = renderExportList;
+    document.getElementById('exportMonthFilter').onchange = renderExportList;
+    document.getElementById('exportSelectAll').onchange = () => {
+        const checked = document.getElementById('exportSelectAll').checked;
+        document.querySelectorAll('.export-cb').forEach(cb => {
+            cb.checked = checked;
+            cb.closest('.export-row').classList.toggle('selected', checked);
+        });
+        updateExportCount();
+    };
+    document.getElementById('exportPdfBtn').onclick = exportPdf;
+    document.getElementById('exportTxtBtn').onclick = exportTxt;
+}
+
+function getFilteredExport() {
+    const y = document.getElementById('exportYearFilter').value;
+    const m = document.getElementById('exportMonthFilter').value;
+    return exportEntries.filter(e => {
+        if (y && !e.date_str.startsWith(y)) return false;
+        if (m && parseInt(e.date_str.slice(5, 7)) !== parseInt(m)) return false;
+        return true;
+    });
+}
+
+function renderExportList() {
+    const filtered = getFilteredExport();
+    const $list = document.getElementById('exportList');
+    $list.innerHTML = '';
+    document.getElementById('exportSelectAll').checked = false;
+    if (!filtered.length) {
+        $list.innerHTML = '<div style="color:#999;padding:30px;text-align:center">일기가 없습니다.</div>';
+        updateExportCount();
+        return;
+    }
+    filtered.forEach(e => {
+        const row = document.createElement('div');
+        row.className = 'export-row';
+        row.dataset.id = e.id;
+        row.innerHTML = `<input type="checkbox" class="export-cb" value="${e.id}"><div class="export-row-info"><div class="export-row-date">${e.date_str}</div><div class="export-row-title">${e.mood ? e.mood + ' ' : ''}${esc(e.title || '무제')}</div></div>`;
+        row.addEventListener('click', (ev) => {
+            if (ev.target.type === 'checkbox') return;
+            const cb = row.querySelector('.export-cb');
+            cb.checked = !cb.checked;
+            row.classList.toggle('selected', cb.checked);
+            updateExportCount();
+        });
+        row.querySelector('.export-cb').addEventListener('change', () => {
+            row.classList.toggle('selected', row.querySelector('.export-cb').checked);
+            updateExportCount();
+        });
+        $list.appendChild(row);
+    });
+    updateExportCount();
+}
+
+function getSelectedExportIds() {
+    return [...document.querySelectorAll('.export-cb:checked')].map(cb => parseInt(cb.value));
+}
+
+function updateExportCount() {
+    const count = getSelectedExportIds().length;
+    document.getElementById('exportSelectedCount').textContent = count;
+    document.getElementById('exportPdfBtn').disabled = count === 0;
+    document.getElementById('exportTxtBtn').disabled = count === 0;
+}
+
+function exportPdf() {
+    const ids = getSelectedExportIds();
+    const selected = exportEntries.filter(e => ids.includes(e.id));
+    let html = '<h1 style="text-align:center;color:#1A73E8;margin-bottom:30px">일기장</h1>';
+    selected.forEach(e => {
+        const eventHtml = e.event ? `<div style="margin:10px 0;padding:10px;background:#f8f9fa;border-radius:6px;font-size:13px;color:#666"><span style="font-size:11px;color:#1A73E8;font-weight:bold;margin-right:6px">이벤트</span>${esc(e.event).replace(/\n/g, '<br>')}</div>` : '';
+        html += `<div style="margin-bottom:36px;page-break-inside:avoid"><div style="border-bottom:2px solid #1A73E8;padding-bottom:8px;margin-bottom:12px"><div style="font-size:12px;color:#999">${e.date_str}</div><div style="font-size:18px;font-weight:bold;margin-top:4px">${esc(e.title || '무제')} ${e.mood || ''}</div></div>${eventHtml}<div style="font-size:14px;line-height:1.9;white-space:pre-wrap;word-break:break-word">${esc(e.content || '')}</div></div>`;
+    });
+    const w = window.open('', '_blank');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>일기장</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:40px;max-width:800px;margin:0 auto;color:#333}</style></head><body>${html}</body></html>`);
+    w.document.close();
+    w.print();
+}
+
+async function exportTxt() {
+    const ids = getSelectedExportIds();
+    const resp = await fetch('/diary/download/txt', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ids})
+    });
+    const blob = await resp.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'diary.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
 }
