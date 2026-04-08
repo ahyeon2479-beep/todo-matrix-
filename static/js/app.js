@@ -801,23 +801,27 @@ function renderDiaryList(entries) {
     entries.forEach(e => {
         const card = document.createElement('div');
         card.className = 'diary-card';
-        const preview = e.content.length > 80 ? e.content.slice(0, 80) + '…' : e.content;
+        const contentHtml = esc(e.content || '').replace(/\n/g, '<br>');
+        const eventHtml = e.event ? `<div class="dc-event"><span class="dc-event-label">이벤트</span>${esc(e.event).replace(/\n/g, '<br>')}</div>` : '';
         card.innerHTML = `
-            <span class="dc-mood">${e.mood||''}</span>
-            <div class="dc-date">${e.date_str}</div>
-            <div class="dc-title">${esc(e.title || '무제')}</div>
-            <div class="dc-preview">${esc(preview)}</div>
-            <div class="dc-actions">
-                <button class="btn-sm edit-btn">수정</button>
-                <button class="btn-sm del-btn" style="color:#e55">삭제</button>
+            <div class="dc-header">
+                <div>
+                    <div class="dc-date">${e.date_str}</div>
+                    <div class="dc-title">${e.mood ? e.mood + ' ' : ''}${esc(e.title || '무제')}</div>
+                </div>
+                <div class="dc-actions">
+                    <button class="btn-sm edit-btn">수정</button>
+                    <button class="btn-sm del-btn" style="color:#e55">삭제</button>
+                </div>
             </div>
+            <div class="dc-content">${contentHtml}</div>
+            ${eventHtml}
         `;
         card.querySelector('.edit-btn').addEventListener('click', (ev) => { ev.stopPropagation(); openDiaryModal(e); });
         card.querySelector('.del-btn').addEventListener('click', async (ev) => {
             ev.stopPropagation();
             if (confirm('이 일기를 삭제할까요?')) { await api(`/api/diary/${e.date_str}`, {method:'DELETE'}); refreshDiary(); }
         });
-        card.addEventListener('click', () => openDiaryModal(e));
         $list.appendChild(card);
     });
 }
