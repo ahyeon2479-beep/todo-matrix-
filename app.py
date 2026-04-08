@@ -3,7 +3,7 @@ import json
 import time
 from datetime import datetime, date
 
-from flask import Flask, render_template, redirect, url_for, request, jsonify, session
+from flask import Flask, render_template, redirect, url_for, request, jsonify, session, make_response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
@@ -418,6 +418,47 @@ def delete_diary(date_str):
     db.session.delete(entry)
     db.session.commit()
     return jsonify({"ok": True})
+
+
+# ── Diary Download ────────────────────────────────────────
+
+@app.route("/diary/download/txt")
+@login_required
+def download_diary_txt():
+    year = request.args.get("year", type=int)
+    q = Diary.query.filter_by(user_id=current_user.id)
+    if year:
+        q = q.filter(Diary.date_str.like(f"{year}-%"))
+    entries = q.order_by(Diary.date_str.asc()).all()
+    lines = []
+    for e in entries:
+        lines.append(f"{'='*50}")
+        lines.append(f"날짜: {e.date_str}")
+        if e.mood:
+            lines.append(f"기분: {e.mood}")
+        lines.append(f"제목: {e.title or '무제'}")
+        if e.event:
+            lines.append(f"이벤트: {e.event}")
+        lines.append(f"{'─'*50}")
+        lines.append(e.content or '')
+        lines.append('')
+    text = '\n'.join(lines)
+    filename = f"diary_{year or 'all'}.txt"
+    resp = make_response(text)
+    resp.headers['Content-Type'] = 'text/plain; charset=utf-8'
+    resp.headers['Content-Disposition'] = f'attachment; filename={filename}'
+    return resp
+
+
+@app.route("/diary/print")
+@login_required
+def print_diary():
+    year = request.args.get("year", type=int)
+    q = Diary.query.filter_by(user_id=current_user.id)
+    if year:
+        q = q.filter(Diary.date_str.like(f"{year}-%"))
+    entries = q.order_by(Diary.date_str.asc()).all()
+    return render_template("diary_print.html", entries=entries, year=year, user=current_user, cache_bust=CACHE_BUST)
 
 
 # ── Free Memo API ─────────────────────────────────────────

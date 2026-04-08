@@ -577,6 +577,8 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
     display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
 }
 .diary-toolbar h2 { font-size: 16px; margin-right: auto; }
+.diary-download-btn { background: none; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-size: 15px; padding: 4px 8px; }
+.diary-download-btn:hover { background: #f0f0f0; }
 .diary-filters { display: flex; gap: 4px; }
 .diary-filters select {
     padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;

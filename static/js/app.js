@@ -704,6 +704,10 @@ function setupDiary() {
     });
 
     document.getElementById('diaryWriteBtn').addEventListener('click', () => openDiaryModal());
+    document.getElementById('diaryDownloadBtn').addEventListener('click', () => {
+        const year = diaryYear || new Date().getFullYear();
+        window.open(`/diary/print?year=${year}`, '_blank');
+    });
     document.getElementById('diaryCancel').addEventListener('click', closeDiaryEditor);
     document.getElementById('diarySave').addEventListener('click', saveDiary);
     document.getElementById('diaryPrevDay').addEventListener('click', () => navDiaryDay(-1));
