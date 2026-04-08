@@ -79,7 +79,7 @@ function setupHeader() {
     });
     hMenu.querySelector('[data-action="repeatView"]').addEventListener('click', () => { hMenu.classList.add('hidden'); showView('repeat'); });
     hMenu.querySelector('[data-action="habitFullView"]').addEventListener('click', () => { hMenu.classList.add('hidden'); showView('habitFull'); });
-    hMenu.querySelector('[data-action="diaryExport"]').addEventListener('click', () => { hMenu.classList.add('hidden'); window.open('/diary/export', '_blank'); });
+    hMenu.querySelector('[data-action="diaryExport"]').addEventListener('click', () => { hMenu.classList.add('hidden'); location.href = '/diary/export'; });
 }
 
 function showView(name) {
@@ -706,7 +706,7 @@ function setupDiary() {
 
     document.getElementById('diaryWriteBtn').addEventListener('click', () => openDiaryModal());
     document.getElementById('diaryDownloadBtn').addEventListener('click', () => {
-        window.open('/diary/export', '_blank');
+        location.href = '/diary/export';
     });
     document.getElementById('diaryCancel').addEventListener('click', closeDiaryEditor);
     document.getElementById('diarySave').addEventListener('click', saveDiary);
