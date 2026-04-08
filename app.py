@@ -396,12 +396,13 @@ def save_diary(date_str):
         entry.title = data.get("title", entry.title)
         entry.content = data.get("content", entry.content)
         entry.mood = data.get("mood", entry.mood)
+        entry.event = data.get("event", entry.event)
         entry.updated_at = datetime.now()
     else:
         entry = Diary(
             user_id=current_user.id, date_str=date_str,
             title=data.get("title", ""), content=data.get("content", ""),
-            mood=data.get("mood", ""),
+            mood=data.get("mood", ""), event=data.get("event", ""),
         )
         db.session.add(entry)
     db.session.commit()
@@ -486,6 +487,12 @@ def _matches_repeat(todo, date_str):
 with app.app_context():
     try:
         db.create_all()
+        # 기존 diary 테이블에 event 컬럼이 없으면 추가
+        try:
+            db.session.execute(db.text("ALTER TABLE diary ADD COLUMN event TEXT DEFAULT ''"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
         print("DB tables created successfully")
     except Exception as e:
         print(f"DB create_all error: {e}")

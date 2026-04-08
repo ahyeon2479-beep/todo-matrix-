@@ -849,6 +849,7 @@ function openDiaryModal(entry = null) {
     document.getElementById('diaryDateInput').value = entry?.date_str || todayStr();
     document.getElementById('diaryTitleInput').value = entry?.title || '';
     document.getElementById('diaryContentInput').value = entry?.content || '';
+    document.getElementById('diaryEventInput').value = entry?.event || '';
     document.getElementById('diaryEditDate').value = entry?.date_str || '';
     selectedMood = entry?.mood || '';
     document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('selected', b.dataset.mood === selectedMood));
@@ -896,6 +897,7 @@ async function saveDiary() {
         title: document.getElementById('diaryTitleInput').value.trim(),
         content: document.getElementById('diaryContentInput').value,
         mood: selectedMood,
+        event: document.getElementById('diaryEventInput').value,
     };
     await api(`/api/diary/${dateStr}`, {method:'PUT', body:JSON.stringify(data)});
     // 토스트 메시지
