@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from datetime import datetime, date
 
 from flask import Flask, render_template, redirect, url_for, request, jsonify, session
@@ -27,6 +28,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True, "connect_args": {}}
 
 DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
+CACHE_BUST = str(int(time.time()))
 
 db.init_app(app)
 
@@ -59,7 +61,7 @@ def load_user(user_id):
 @app.route("/")
 def index():
     if current_user.is_authenticated:
-        return render_template("index.html", user=current_user)
+        return render_template("index.html", user=current_user, cache_bust=CACHE_BUST)
     return redirect(url_for("login_page"))
 
 
