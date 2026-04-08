@@ -801,6 +801,7 @@ function renderDiaryList(entries) {
     entries.forEach(e => {
         const card = document.createElement('div');
         card.className = 'diary-card';
+        const preview = e.content.length > 60 ? e.content.slice(0, 60) + '…' : e.content;
         const contentHtml = esc(e.content || '').replace(/\n/g, '<br>');
         const eventHtml = e.event ? `<div class="dc-event"><span class="dc-event-label">이벤트</span>${esc(e.event).replace(/\n/g, '<br>')}</div>` : '';
         card.innerHTML = `
@@ -809,14 +810,28 @@ function renderDiaryList(entries) {
                     <div class="dc-date">${e.date_str}</div>
                     <div class="dc-title">${e.mood ? e.mood + ' ' : ''}${esc(e.title || '무제')}</div>
                 </div>
+                <span class="dc-toggle">▼</span>
+            </div>
+            <div class="dc-preview">${esc(preview)}</div>
+            <div class="dc-body hidden">
+                <div class="dc-content">${contentHtml}</div>
+                ${eventHtml}
                 <div class="dc-actions">
                     <button class="btn-sm edit-btn">수정</button>
                     <button class="btn-sm del-btn" style="color:#e55">삭제</button>
                 </div>
             </div>
-            <div class="dc-content">${contentHtml}</div>
-            ${eventHtml}
         `;
+        card.addEventListener('click', (ev) => {
+            if (ev.target.closest('.dc-actions')) return;
+            const body = card.querySelector('.dc-body');
+            const previewEl = card.querySelector('.dc-preview');
+            const toggle = card.querySelector('.dc-toggle');
+            const open = body.classList.toggle('hidden');
+            previewEl.classList.toggle('hidden', !open);
+            toggle.textContent = open ? '▼' : '▲';
+            card.classList.toggle('expanded', !open);
+        });
         card.querySelector('.edit-btn').addEventListener('click', (ev) => { ev.stopPropagation(); openDiaryModal(e); });
         card.querySelector('.del-btn').addEventListener('click', async (ev) => {
             ev.stopPropagation();
