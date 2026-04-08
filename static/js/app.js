@@ -816,13 +816,8 @@ async function openDiaryReadModal(e) {
     document.getElementById('drMood').textContent = e.mood || '';
     document.getElementById('drTitle').textContent = e.title || '무제';
     document.getElementById('drContent').innerHTML = esc(e.content || '').replace(/\n/g, '<br>');
-    const $event = document.getElementById('drEvent');
-    if (e.event) {
-        $event.innerHTML = `<span class="dc-event-label">이벤트</span>${esc(e.event).replace(/\n/g, '<br>')}`;
-        $event.classList.remove('hidden');
-    } else {
-        $event.classList.add('hidden');
-    }
+    const $eventContent = document.getElementById('drEventContent');
+    $eventContent.innerHTML = e.event ? esc(e.event).replace(/\n/g, '<br>') : '-';
     // 하루 요약 로드
     try {
         const todos = await api(`/api/todos?date=${e.date_str}`);

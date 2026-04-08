@@ -611,8 +611,11 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
 .dr-content { font-size: 14px; color: #444; line-height: 1.9; white-space: pre-wrap; word-break: break-word; }
 .dc-event { margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-size: 13px; color: #666; line-height: 1.6; }
 .dc-event-label { display: inline-block; font-size: 11px; color: #1A73E8; font-weight: bold; margin-bottom: 4px; margin-right: 6px; }
-.dr-summary { margin: 12px 0; padding: 12px; background: #f8f9fa; border-radius: 8px; }
-.dr-summary-title { font-size: 12px; font-weight: bold; color: #666; margin-bottom: 8px; }
+.dr-info-row { display: flex; gap: 10px; margin: 12px 0; }
+.dr-event-box { flex: 1; padding: 12px; background: #f8f9fa; border-radius: 8px; }
+.dr-event-content { font-size: 13px; color: #444; line-height: 1.6; margin-top: 4px; }
+.dr-summary { flex: 1; padding: 12px; background: #f8f9fa; border-radius: 8px; }
+.dr-box-title { font-size: 12px; font-weight: bold; color: #666; margin-bottom: 8px; }
 .dr-summary-grid { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 13px; }
 .dr-summary-label { color: #888; }
 .dr-summary-value { font-weight: bold; color: #333; text-align: right; }
