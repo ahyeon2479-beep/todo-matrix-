@@ -6,6 +6,7 @@ from datetime import datetime, date
 from flask import Flask, render_template, redirect, url_for, request, jsonify, session, make_response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from authlib.integrations.flask_client import OAuth
+from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 
 from models_db import db, User, Todo, Memo, Habit, HabitCheck, BucketItem, Diary, FreeMemo
@@ -15,6 +16,8 @@ from pathlib import Path
 load_dotenv(Path(__file__).parent / ".env")
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+app.config["PREFERRED_URL_SCHEME"] = "https"
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
 _db_url = os.getenv("DATABASE_URL", "")
 if _db_url:
