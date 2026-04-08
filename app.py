@@ -422,14 +422,11 @@ def delete_diary(date_str):
 
 # ── Diary Download ────────────────────────────────────────
 
-@app.route("/diary/download/txt")
+@app.route("/diary/download/txt", methods=["POST"])
 @login_required
 def download_diary_txt():
-    year = request.args.get("year", type=int)
-    q = Diary.query.filter_by(user_id=current_user.id)
-    if year:
-        q = q.filter(Diary.date_str.like(f"{year}-%"))
-    entries = q.order_by(Diary.date_str.asc()).all()
+    ids = request.json.get("ids", [])
+    entries = Diary.query.filter(Diary.id.in_(ids), Diary.user_id == current_user.id).order_by(Diary.date_str.asc()).all()
     lines = []
     for e in entries:
         lines.append(f"{'='*50}")
@@ -443,22 +440,17 @@ def download_diary_txt():
         lines.append(e.content or '')
         lines.append('')
     text = '\n'.join(lines)
-    filename = f"diary_{year or 'all'}.txt"
     resp = make_response(text)
     resp.headers['Content-Type'] = 'text/plain; charset=utf-8'
-    resp.headers['Content-Disposition'] = f'attachment; filename={filename}'
+    resp.headers['Content-Disposition'] = 'attachment; filename=diary.txt'
     return resp
 
 
-@app.route("/diary/print")
+@app.route("/diary/export")
 @login_required
-def print_diary():
-    year = request.args.get("year", type=int)
-    q = Diary.query.filter_by(user_id=current_user.id)
-    if year:
-        q = q.filter(Diary.date_str.like(f"{year}-%"))
-    entries = q.order_by(Diary.date_str.asc()).all()
-    return render_template("diary_print.html", entries=entries, year=year, user=current_user, cache_bust=CACHE_BUST)
+def export_diary_page():
+    entries = Diary.query.filter_by(user_id=current_user.id).order_by(Diary.date_str.desc()).all()
+    return render_template("diary_print.html", entries=entries, user=current_user, cache_bust=CACHE_BUST)
 
 
 # ── Free Memo API ─────────────────────────────────────────

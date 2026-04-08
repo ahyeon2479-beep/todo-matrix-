@@ -705,8 +705,7 @@ function setupDiary() {
 
     document.getElementById('diaryWriteBtn').addEventListener('click', () => openDiaryModal());
     document.getElementById('diaryDownloadBtn').addEventListener('click', () => {
-        const year = diaryYear || new Date().getFullYear();
-        window.open(`/diary/print?year=${year}`, '_blank');
+        window.open('/diary/export', '_blank');
     });
     document.getElementById('diaryCancel').addEventListener('click', closeDiaryEditor);
     document.getElementById('diarySave').addEventListener('click', saveDiary);

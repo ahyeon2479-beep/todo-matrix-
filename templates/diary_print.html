@@ -3,59 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>일기장 - {{ year or '전체' }}</title>
+    <title>일기 내보내기</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Malgun Gothic', sans-serif; background: #fff; color: #333; padding: 40px; max-width: 800px; margin: 0 auto; }
-        .print-header { text-align: center; margin-bottom: 40px; }
-        .print-header h1 { font-size: 22px; color: #1A73E8; }
-        .print-header p { font-size: 13px; color: #999; margin-top: 4px; }
-        .toolbar { display: flex; gap: 8px; justify-content: center; margin-bottom: 30px; }
-        .toolbar button { padding: 8px 20px; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; }
-        .toolbar button:hover { background: #f0f0f0; }
-        .toolbar .btn-pdf { background: #1A73E8; color: #fff; border-color: #1A73E8; }
-        .toolbar .btn-pdf:hover { background: #1558b0; }
-        .entry { margin-bottom: 36px; page-break-inside: avoid; }
-        .entry-header { border-bottom: 2px solid #1A73E8; padding-bottom: 8px; margin-bottom: 12px; }
-        .entry-date { font-size: 12px; color: #999; }
-        .entry-title { font-size: 18px; font-weight: bold; margin-top: 4px; }
-        .entry-mood { font-size: 16px; margin-left: 6px; }
-        .entry-event { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 13px; color: #666; line-height: 1.6; }
-        .entry-event-label { font-size: 11px; color: #1A73E8; font-weight: bold; margin-right: 6px; }
-        .entry-content { font-size: 14px; line-height: 1.9; white-space: pre-wrap; word-break: break-word; }
+        body { font-family: 'Malgun Gothic', sans-serif; background: #f5f5f5; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; padding: 30px 20px; }
+        h1 { font-size: 20px; color: #1A73E8; text-align: center; margin-bottom: 6px; }
+        .subtitle { text-align: center; color: #999; font-size: 13px; margin-bottom: 24px; }
+
+        /* 필터 */
+        .filter-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+        .filter-bar select { padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; font-family: inherit; }
+        .filter-bar label { font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .filter-bar .spacer { flex: 1; }
+
+        /* 버튼 */
+        .actions { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; }
+        .actions button { padding: 8px 20px; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; font-family: inherit; }
+        .actions button:hover { background: #f0f0f0; }
+        .actions .btn-primary { background: #1A73E8; color: #fff; border-color: #1A73E8; }
+        .actions .btn-primary:hover { background: #1558b0; }
+        .actions .btn-primary:disabled { background: #aaa; border-color: #aaa; cursor: default; }
+
+        /* 선택 카운트 */
+        .select-info { text-align: center; font-size: 12px; color: #888; margin-bottom: 16px; }
+        .select-info strong { color: #1A73E8; }
+
+        /* 일기 목록 */
+        .entry-list { display: flex; flex-direction: column; gap: 6px; }
+        .entry-row {
+            display: flex; align-items: center; gap: 10px;
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 8px;
+            padding: 10px 14px; cursor: pointer; transition: border-color 0.15s;
+        }
+        .entry-row:hover { border-color: #1A73E8; }
+        .entry-row.selected { border-color: #1A73E8; background: #f0f7ff; }
+        .entry-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+        .entry-info { flex: 1; min-width: 0; }
+        .entry-date { font-size: 11px; color: #999; }
+        .entry-title { font-size: 14px; font-weight: bold; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .entry-mood { font-size: 14px; flex-shrink: 0; }
         .no-entries { text-align: center; color: #999; padding: 60px; }
+
+        /* 미리보기(인쇄) */
+        .print-preview { display: none; }
+        .print-preview .pv-entry { margin-bottom: 36px; page-break-inside: avoid; }
+        .print-preview .pv-header { border-bottom: 2px solid #1A73E8; padding-bottom: 8px; margin-bottom: 12px; }
+        .print-preview .pv-date { font-size: 12px; color: #999; }
+        .print-preview .pv-title { font-size: 18px; font-weight: bold; margin-top: 4px; }
+        .print-preview .pv-event { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 13px; color: #666; }
+        .print-preview .pv-event-label { font-size: 11px; color: #1A73E8; font-weight: bold; margin-right: 6px; }
+        .print-preview .pv-content { font-size: 14px; line-height: 1.9; white-space: pre-wrap; word-break: break-word; }
+
         @media print {
-            .toolbar { display: none; }
-            body { padding: 20px; }
-            .entry { page-break-inside: avoid; }
+            .container { display: none; }
+            .print-preview { display: block; padding: 20px; max-width: 800px; margin: 0 auto; }
         }
     </style>
 </head>
 <body>
-    <div class="print-header">
-        <h1>{{ user.name }}의 일기장</h1>
-        <p>{{ year or '전체' }}년</p>
-    </div>
-    <div class="toolbar">
-        <button class="btn-pdf" onclick="window.print()">PDF로 저장 (인쇄)</button>
-        <button onclick="location.href='/diary/download/txt?year={{ year or '' }}'">텍스트 파일 다운로드</button>
-        <button onclick="history.back()">돌아가기</button>
-    </div>
-    {% if entries %}
-        {% for e in entries %}
-        <div class="entry">
-            <div class="entry-header">
-                <div class="entry-date">{{ e.date_str }}</div>
-                <div class="entry-title">{{ e.title or '무제' }}{% if e.mood %} <span class="entry-mood">{{ e.mood }}</span>{% endif %}</div>
-            </div>
-            {% if e.event %}
-            <div class="entry-event"><span class="entry-event-label">이벤트</span>{{ e.event }}</div>
-            {% endif %}
-            <div class="entry-content">{{ e.content or '' }}</div>
+    <div class="container">
+        <h1>{{ user.name }}의 일기장 내보내기</h1>
+        <p class="subtitle">다운로드할 일기를 선택하세요</p>
+
+        <div class="filter-bar">
+            <select id="yearFilter">
+                <option value="">전체 연도</option>
+            </select>
+            <select id="monthFilter">
+                <option value="">전체 월</option>
+                {% for m in range(1, 13) %}
+                <option value="{{ m }}">{{ m }}월</option>
+                {% endfor %}
+            </select>
+            <span class="spacer"></span>
+            <label><input type="checkbox" id="selectAll"> 전체 선택</label>
         </div>
-        {% endfor %}
-    {% else %}
-        <div class="no-entries">작성된 일기가 없습니다.</div>
-    {% endif %}
+
+        <div class="select-info"><strong id="selectedCount">0</strong>개 선택됨</div>
+
+        <div class="actions">
+            <button class="btn-primary" id="btnPdf" disabled>PDF로 저장</button>
+            <button id="btnTxt" disabled>텍스트 파일 다운로드</button>
+            <button onclick="history.back()">돌아가기</button>
+        </div>
+
+        <div class="entry-list" id="entryList"></div>
+        <div class="no-entries hidden" id="noEntries">일기가 없습니다.</div>
+    </div>
+
+    <!-- 인쇄용 미리보기 (print 시에만 보임) -->
+    <div class="print-preview" id="printPreview"></div>
+
+    <script>
+        const allEntries = [
+            {% for e in entries %}
+            {
+                id: {{ e.id }},
+                date_str: "{{ e.date_str }}",
+                title: {{ e.title|tojson }},
+                content: {{ e.content|tojson }},
+                mood: "{{ e.mood or '' }}",
+                event: {{ (e.event or '')|tojson }}
+            },
+            {% endfor %}
+        ];
+
+        // 연도 필터 옵션 생성
+        const years = [...new Set(allEntries.map(e => e.date_str.slice(0, 4)))].sort().reverse();
+        const $year = document.getElementById('yearFilter');
+        years.forEach(y => {
+            const opt = document.createElement('option');
+            opt.value = y; opt.textContent = y + '년';
+            $year.appendChild(opt);
+        });
+
+        const $month = document.getElementById('monthFilter');
+        const $list = document.getElementById('entryList');
+        const $noEntries = document.getElementById('noEntries');
+        const $selectAll = document.getElementById('selectAll');
+        const $count = document.getElementById('selectedCount');
+        const $btnPdf = document.getElementById('btnPdf');
+        const $btnTxt = document.getElementById('btnTxt');
+
+        function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        function getFiltered() {
+            const y = $year.value;
+            const m = $month.value;
+            return allEntries.filter(e => {
+                if (y && !e.date_str.startsWith(y)) return false;
+                if (m && parseInt(e.date_str.slice(5, 7)) !== parseInt(m)) return false;
+                return true;
+            });
+        }
+
+        function render() {
+            const filtered = getFiltered();
+            $list.innerHTML = '';
+            $noEntries.classList.toggle('hidden', filtered.length > 0);
+            filtered.forEach(e => {
+                const row = document.createElement('div');
+                row.className = 'entry-row';
+                row.dataset.id = e.id;
+                row.innerHTML = `
+                    <input type="checkbox" class="entry-cb" value="${e.id}">
+                    <div class="entry-info">
+                        <div class="entry-date">${e.date_str}</div>
+                        <div class="entry-title">${esc(e.title || '무제')}</div>
+                    </div>
+                    ${e.mood ? `<span class="entry-mood">${e.mood}</span>` : ''}
+                `;
+                row.addEventListener('click', (ev) => {
+                    if (ev.target.type === 'checkbox') return;
+                    const cb = row.querySelector('.entry-cb');
+                    cb.checked = !cb.checked;
+                    row.classList.toggle('selected', cb.checked);
+                    updateCount();
+                });
+                row.querySelector('.entry-cb').addEventListener('change', (ev) => {
+                    row.classList.toggle('selected', ev.target.checked);
+                    updateCount();
+                });
+                $list.appendChild(row);
+            });
+            $selectAll.checked = false;
+            updateCount();
+        }
+
+        function getSelectedIds() {
+            return [...document.querySelectorAll('.entry-cb:checked')].map(cb => parseInt(cb.value));
+        }
+
+        function updateCount() {
+            const count = getSelectedIds().length;
+            $count.textContent = count;
+            $btnPdf.disabled = count === 0;
+            $btnTxt.disabled = count === 0;
+            const allCbs = document.querySelectorAll('.entry-cb');
+            $selectAll.checked = allCbs.length > 0 && count === allCbs.length;
+        }
+
+        $year.addEventListener('change', render);
+        $month.addEventListener('change', render);
+        $selectAll.addEventListener('change', () => {
+            const checked = $selectAll.checked;
+            document.querySelectorAll('.entry-cb').forEach(cb => {
+                cb.checked = checked;
+                cb.closest('.entry-row').classList.toggle('selected', checked);
+            });
+            updateCount();
+        });
+
+        // PDF (인쇄)
+        $btnPdf.addEventListener('click', () => {
+            const ids = getSelectedIds();
+            const selected = allEntries.filter(e => ids.includes(e.id));
+            const $pv = document.getElementById('printPreview');
+            $pv.innerHTML = '<h1 style="text-align:center;color:#1A73E8;margin-bottom:30px">일기장</h1>';
+            selected.forEach(e => {
+                const eventHtml = e.event ? `<div class="pv-event"><span class="pv-event-label">이벤트</span>${esc(e.event)}</div>` : '';
+                $pv.innerHTML += `
+                    <div class="pv-entry">
+                        <div class="pv-header">
+                            <div class="pv-date">${e.date_str}</div>
+                            <div class="pv-title">${esc(e.title || '무제')} ${e.mood}</div>
+                        </div>
+                        ${eventHtml}
+                        <div class="pv-content">${esc(e.content || '')}</div>
+                    </div>
+                `;
+            });
+            window.print();
+        });
+
+        // TXT
+        $btnTxt.addEventListener('click', async () => {
+            const ids = getSelectedIds();
+            const resp = await fetch('/diary/download/txt', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ids})
+            });
+            const blob = await resp.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'diary.txt';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        });
+
+        render();
+    </script>
 </body>
 </html>
