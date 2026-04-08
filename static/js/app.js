@@ -900,13 +900,7 @@ async function saveDiary() {
         event: document.getElementById('diaryEventInput').value,
     };
     await api(`/api/diary/${dateStr}`, {method:'PUT', body:JSON.stringify(data)});
-    // 토스트 메시지
-    const $toast = document.getElementById('diaryToast');
-    $toast.classList.remove('hidden');
-    $toast.style.animation = 'none';
-    $toast.offsetHeight; // reflow
-    $toast.style.animation = 'fadeOut 2s ease-in-out forwards';
-    setTimeout(() => $toast.classList.add('hidden'), 2200);
+    closeDiaryEditor();
 }
 
 async function addBucket() {
