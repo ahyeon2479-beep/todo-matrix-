@@ -268,8 +268,17 @@
                 <span class="dr-date" id="drDate"></span>
             </div>
             <h2 class="dr-title" id="drTitle"></h2>
-            <div class="dr-content" id="drContent"></div>
+            <div class="dr-summary">
+                <div class="dr-summary-title">오늘 하루 요약</div>
+                <div class="dr-summary-grid">
+                    <span class="dr-summary-label">할 일</span><span class="dr-summary-value" id="drTodo">-</span>
+                    <span class="dr-summary-label">완료</span><span class="dr-summary-value dr-done" id="drDone">-</span>
+                    <span class="dr-summary-label">습관</span><span class="dr-summary-value dr-habit" id="drHabit">-</span>
+                </div>
+            </div>
             <div class="dc-event hidden" id="drEvent"></div>
+            <hr class="dr-divider">
+            <div class="dr-content" id="drContent"></div>
             <div class="dr-actions">
                 <button class="btn-sm dr-edit-btn">수정</button>
                 <button class="btn-sm dr-delete-btn" style="color:#e55">삭제</button>

@@ -810,7 +810,7 @@ function renderDiaryList(entries) {
     });
 }
 
-function openDiaryReadModal(e) {
+async function openDiaryReadModal(e) {
     const $m = document.getElementById('diaryReadModal');
     document.getElementById('drDate').textContent = e.date_str;
     document.getElementById('drMood').textContent = e.mood || '';
@@ -822,6 +822,26 @@ function openDiaryReadModal(e) {
         $event.classList.remove('hidden');
     } else {
         $event.classList.add('hidden');
+    }
+    // 하루 요약 로드
+    try {
+        const todos = await api(`/api/todos?date=${e.date_str}`);
+        const total = todos.length;
+        const done = todos.filter(t => t.completed).length;
+        document.getElementById('drTodo').textContent = `${total}개`;
+        document.getElementById('drDone').textContent = `${done}/${total}`;
+        const habits = await api('/api/habits');
+        if (habits.length) {
+            const checks = await api(`/api/habits/checks?dates=${e.date_str}`);
+            const checked = Object.values(checks).filter(v => v).length;
+            document.getElementById('drHabit').textContent = `${checked}/${habits.length}`;
+        } else {
+            document.getElementById('drHabit').textContent = '-';
+        }
+    } catch (err) {
+        document.getElementById('drTodo').textContent = '-';
+        document.getElementById('drDone').textContent = '-';
+        document.getElementById('drHabit').textContent = '-';
     }
     $m.classList.remove('hidden');
     $m.querySelector('.dr-edit-btn').onclick = () => { $m.classList.add('hidden'); openDiaryModal(e); };
