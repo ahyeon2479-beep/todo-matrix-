@@ -31,7 +31,8 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True, "connect_args": {}}
 
 DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
-CACHE_BUST = str(int(time.time()))
+def cache_bust():
+    return str(int(time.time()))
 
 db.init_app(app)
 
@@ -64,7 +65,7 @@ def load_user(user_id):
 @app.route("/")
 def index():
     if current_user.is_authenticated:
-        return render_template("index.html", user=current_user, cache_bust=CACHE_BUST)
+        return render_template("index.html", user=current_user, cache_bust=cache_bust())
     return redirect(url_for("login_page"))
 
 
@@ -517,7 +518,7 @@ def download_diary_txt():
 @login_required
 def export_diary_page():
     entries = Diary.query.filter_by(user_id=current_user.id).order_by(Diary.date_str.desc()).all()
-    return render_template("diary_print.html", entries=entries, user=current_user, cache_bust=CACHE_BUST)
+    return render_template("diary_print.html", entries=entries, user=current_user, cache_bust=cache_bust())
 
 
 # ── Free Memo API ─────────────────────────────────────────
