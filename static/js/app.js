@@ -308,11 +308,14 @@ document.getElementById('tbImage')?.addEventListener('click', () => {
 document.getElementById('diaryImageInput')?.addEventListener('change', (e) => {
     const files = e.target.files;
     if (!files.length) return;
+    const size = prompt('이미지 크기를 선택하세요:\n1) 작게 (30%)\n2) 중간 (50%)\n3) 크게 (75%)\n4) 원본 (100%)', '2');
+    const widthMap = {'1':'30%','2':'50%','3':'75%','4':'100%'};
+    const w = widthMap[size] || '50%';
     Array.from(files).forEach(file => {
         if (!file.type.startsWith('image/')) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
-            const img = `<img src="${ev.target.result}" style="max-width:100%;border-radius:8px;margin:8px 0">`;
+            const img = `<img src="${ev.target.result}" style="width:${w};border-radius:8px;margin:8px 0;cursor:pointer" onclick="resizeDiaryImg(this)">`;
             document.getElementById('diaryContentInput').focus();
             document.execCommand('insertHTML', false, img);
         };
@@ -327,6 +330,12 @@ document.getElementById('tbLink')?.addEventListener('click', () => {
     document.getElementById('diaryContentInput').focus();
     document.execCommand('insertHTML', false, `<a href="${url}" target="_blank" style="color:#1A73E8">${esc(text || url)}</a>`);
 });
+
+function resizeDiaryImg(img) {
+    const size = prompt('이미지 크기를 선택하세요:\n1) 작게 (30%)\n2) 중간 (50%)\n3) 크게 (75%)\n4) 원본 (100%)', '2');
+    const widthMap = {'1':'30%','2':'50%','3':'75%','4':'100%'};
+    if (widthMap[size]) img.style.width = widthMap[size];
+}
 
 /* ── Todo CRUD ───────────────────────────────────────── */
 async function toggleTodo(id) {
