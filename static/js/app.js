@@ -111,6 +111,9 @@ function showView(name) {
     } else if (name === 'diaryExport') {
         document.getElementById('diaryExportView').classList.remove('hidden');
         refreshExport();
+    } else if (name === 'diaryTrash') {
+        document.getElementById('diaryTrashView').classList.remove('hidden');
+        refreshTrash();
     }
 }
 
@@ -858,6 +861,8 @@ function setupDiary() {
     document.getElementById('diaryDownloadBtn').addEventListener('click', () => {
         showView('diaryExport');
     });
+    document.getElementById('diaryTrashBtn').addEventListener('click', () => showView('diaryTrash'));
+    document.getElementById('trashBackBtn').addEventListener('click', () => showView('diary'));
     document.getElementById('diaryCancel').addEventListener('click', closeDiaryEditor);
     document.getElementById('diarySave').addEventListener('click', saveDiary);
     document.getElementById('diaryPrevDay').addEventListener('click', () => navDiaryDay(-1));
@@ -979,7 +984,8 @@ function renderDiaryList(entries) {
     $delBtn.onclick = async () => {
         const checked = [...document.querySelectorAll('.diary-cb:checked')];
         if (!checked.length) return;
-        if (!confirm(`${checked.length}개 일기를 삭제할까요?`)) return;
+        if (!confirm(`${checked.length}개 일기를 휴지통으로 이동할까요?`)) return;
+        if (checked.length >= 2 && !confirm(`정말 ${checked.length}개 일기를 모두 삭제하시겠습니까?`)) return;
         await Promise.all(checked.map(cb => api(`/api/diary/${cb.value}`, {method:'DELETE'})));
         refreshDiary();
     };
@@ -1331,4 +1337,74 @@ async function exportTxt() {
     a.download = 'diary.txt';
     a.click();
     URL.revokeObjectURL(a.href);
+}
+
+/* ── Diary Trash ──────────────────────────────────────── */
+async function refreshTrash() {
+    const entries = await api('/api/diary/trash');
+    const $list = document.getElementById('trashListView');
+    const $bar = document.getElementById('trashSelectBar');
+    const $selectAll = document.getElementById('trashSelectAll');
+    const $count = document.getElementById('trashSelectCount');
+    const $restoreBtn = document.getElementById('trashRestoreBtn');
+    const $delBtn = document.getElementById('trashDeleteBtn');
+    $list.innerHTML = '';
+    $selectAll.checked = false;
+
+    if (!entries.length) {
+        $bar.classList.add('hidden');
+        $list.innerHTML = '<div style="color:#999;padding:30px;text-align:center">휴지통이 비어있습니다.</div>';
+        return;
+    }
+    $bar.classList.remove('hidden');
+
+    function updateCount() {
+        const checked = document.querySelectorAll('.trash-cb:checked');
+        $count.textContent = `${checked.length}개 선택`;
+        $restoreBtn.disabled = checked.length === 0;
+        $delBtn.disabled = checked.length === 0;
+        const allCbs = document.querySelectorAll('.trash-cb');
+        $selectAll.checked = allCbs.length > 0 && checked.length === allCbs.length;
+    }
+
+    $selectAll.onchange = () => {
+        document.querySelectorAll('.trash-cb').forEach(cb => { cb.checked = $selectAll.checked; });
+        updateCount();
+    };
+    $restoreBtn.onclick = async () => {
+        const checked = [...document.querySelectorAll('.trash-cb:checked')];
+        if (!checked.length || !confirm(`${checked.length}개 일기를 복원할까요?`)) return;
+        await Promise.all(checked.map(cb => api(`/api/diary/restore/${cb.value}`, {method:'POST'})));
+        refreshTrash();
+    };
+    $delBtn.onclick = async () => {
+        const checked = [...document.querySelectorAll('.trash-cb:checked')];
+        if (!checked.length) return;
+        if (!confirm(`${checked.length}개 일기를 영구 삭제할까요? 복구할 수 없습니다.`)) return;
+        if (!confirm('정말로 영구 삭제하시겠습니까?')) return;
+        await Promise.all(checked.map(cb => api(`/api/diary/permanent/${cb.value}`, {method:'DELETE'})));
+        refreshTrash();
+    };
+
+    entries.forEach(e => {
+        const card = document.createElement('div');
+        card.className = 'diary-card';
+        card.style.opacity = '0.7';
+        const delDate = e.deleted_at ? new Date(e.deleted_at).toLocaleDateString('ko-KR') : '';
+        card.innerHTML = `
+            <input type="checkbox" class="trash-cb diary-cb" value="${e.date_str}">
+            <div class="dc-info">
+                <div class="dc-date">${e.date_str} <span style="color:#e55;font-size:10px">삭제: ${delDate}</span></div>
+                <div class="dc-title">${e.mood ? e.mood + ' ' : ''}${esc(e.title || '무제')}</div>
+            </div>
+        `;
+        card.querySelector('.trash-cb').addEventListener('click', ev => ev.stopPropagation());
+        card.querySelector('.trash-cb').addEventListener('change', updateCount);
+        card.addEventListener('click', (ev) => {
+            if (ev.target.type === 'checkbox') return;
+            openDiaryReadModal(e);
+        });
+        $list.appendChild(card);
+    });
+    updateCount();
 }

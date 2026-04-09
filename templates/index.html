@@ -200,6 +200,7 @@
                             <button class="btn-sm diary-view-toggle" id="diaryToggleView">캘린더</button>
                         </div>
                         <button class="btn-sm diary-download-btn" id="diaryDownloadBtn" title="다운로드">&#128229;</button>
+                        <button class="btn-sm diary-download-btn" id="diaryTrashBtn" title="휴지통">&#128465;</button>
                         <button class="btn-primary" id="diaryWriteBtn">+ 일기 쓰기</button>
                     </div>
                     <!-- 선택 삭제 바 -->
@@ -212,6 +213,25 @@
                     <div id="diaryListView" class="diary-list"></div>
                     <!-- 캘린더 뷰 -->
                     <div id="diaryCalView" class="diary-cal hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 휴지통 뷰 -->
+        <div class="view hidden" id="diaryTrashView">
+            <div class="diary-page">
+                <div class="diary-section">
+                    <div class="diary-toolbar">
+                        <h2>&#128465; 휴지통</h2>
+                        <button class="btn-sm" id="trashBackBtn">&#8592; 일기장으로</button>
+                    </div>
+                    <div class="diary-select-bar hidden" id="trashSelectBar">
+                        <label><input type="checkbox" id="trashSelectAll"> 전체 선택</label>
+                        <span id="trashSelectCount">0개 선택</span>
+                        <button class="btn-sm" id="trashRestoreBtn" style="color:#4a9" disabled>선택 복원</button>
+                        <button class="btn-sm" id="trashDeleteBtn" style="color:#e55" disabled>영구 삭제</button>
+                    </div>
+                    <div id="trashListView" class="diary-list"></div>
                 </div>
             </div>
         </div>

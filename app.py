@@ -377,7 +377,7 @@ def delete_bucket(item_id):
 def get_diaries():
     year = request.args.get("year", type=int)
     month = request.args.get("month", type=int)
-    q = Diary.query.filter_by(user_id=current_user.id)
+    q = Diary.query.filter_by(user_id=current_user.id).filter(Diary.deleted != True)
     if year:
         q = q.filter(db.extract("year", Diary.created_at) == year)
     if month:
@@ -386,10 +386,37 @@ def get_diaries():
     return jsonify([e.to_dict() for e in entries])
 
 
+@app.route("/api/diary/trash")
+@login_required
+def get_diary_trash():
+    entries = Diary.query.filter_by(user_id=current_user.id, deleted=True)\
+        .order_by(Diary.deleted_at.desc()).all()
+    return jsonify([e.to_dict() for e in entries])
+
+
+@app.route("/api/diary/restore/<date_str>", methods=["POST"])
+@login_required
+def restore_diary(date_str):
+    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str, deleted=True).first_or_404()
+    entry.deleted = False
+    entry.deleted_at = None
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/diary/permanent/<date_str>", methods=["DELETE"])
+@login_required
+def permanent_delete_diary(date_str):
+    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str, deleted=True).first_or_404()
+    db.session.delete(entry)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
 @app.route("/api/diary/<date_str>")
 @login_required
 def get_diary(date_str):
-    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).first()
+    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).filter(Diary.deleted != True).first()
     return jsonify(entry.to_dict() if entry else {})
 
 
@@ -397,7 +424,7 @@ def get_diary(date_str):
 @login_required
 def save_diary(date_str):
     data = request.json
-    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).first()
+    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).filter(Diary.deleted != True).first()
     if entry:
         entry.title = data.get("title", entry.title)
         entry.content = data.get("content", entry.content)
@@ -419,7 +446,8 @@ def save_diary(date_str):
 @login_required
 def delete_diary(date_str):
     entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).first_or_404()
-    db.session.delete(entry)
+    entry.deleted = True
+    entry.deleted_at = datetime.now()
     db.session.commit()
     return jsonify({"ok": True})
 
@@ -517,7 +545,7 @@ def download_diary_txt():
 @app.route("/diary/export")
 @login_required
 def export_diary_page():
-    entries = Diary.query.filter_by(user_id=current_user.id).order_by(Diary.date_str.desc()).all()
+    entries = Diary.query.filter_by(user_id=current_user.id).filter(Diary.deleted != True).order_by(Diary.date_str.desc()).all()
     return render_template("diary_print.html", entries=entries, user=current_user, cache_bust=cache_bust())
 
 
@@ -597,6 +625,10 @@ with app.app_context():
             cols = [c['name'] for c in insp.get_columns('diary')]
             if 'event' not in cols:
                 db.session.execute(db.text("ALTER TABLE diary ADD COLUMN event TEXT DEFAULT ''"))
+                db.session.commit()
+            if 'deleted' not in cols:
+                db.session.execute(db.text("ALTER TABLE diary ADD COLUMN deleted BOOLEAN DEFAULT 0"))
+                db.session.execute(db.text("ALTER TABLE diary ADD COLUMN deleted_at DATETIME"))
                 db.session.commit()
         except Exception:
             db.session.rollback()
