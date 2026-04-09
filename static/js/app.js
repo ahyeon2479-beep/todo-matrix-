@@ -1010,7 +1010,8 @@ async function openDiaryReadModal(e) {
     document.getElementById('drDate').textContent = e.date_str;
     document.getElementById('drMood').textContent = e.mood || '';
     document.getElementById('drTitle').textContent = e.title || '무제';
-    document.getElementById('drContent').innerHTML = e.content || '';
+    const rc = e.content || '';
+    document.getElementById('drContent').innerHTML = rc.includes('<') ? rc : rc.replace(/\n/g, '<br>');
     const $eventContent = document.getElementById('drEventContent');
     $eventContent.innerHTML = e.event ? esc(e.event).replace(/\n/g, '<br>') : '-';
     // 하루 요약 로드
@@ -1073,7 +1074,8 @@ function openDiaryModal(entry = null) {
     document.getElementById('diaryDateInput').value = entry?.date_str || todayStr();
     document.getElementById('diaryTitleInput').value = entry?.title || '';
     const $editor = document.getElementById('diaryContentInput');
-    $editor.innerHTML = entry?.content || '';
+    const rawContent = entry?.content || '';
+    $editor.innerHTML = rawContent.includes('<') ? rawContent : rawContent.replace(/\n/g, '<br>');
     document.getElementById('diaryEventInput').value = entry?.event || '';
     document.getElementById('diaryEditDate').value = entry?.date_str || '';
     selectedMood = entry?.mood || '';
