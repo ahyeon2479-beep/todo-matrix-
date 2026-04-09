@@ -202,6 +202,12 @@
                         <button class="btn-sm diary-download-btn" id="diaryDownloadBtn" title="다운로드">&#128229;</button>
                         <button class="btn-primary" id="diaryWriteBtn">+ 일기 쓰기</button>
                     </div>
+                    <!-- 선택 삭제 바 -->
+                    <div class="diary-select-bar hidden" id="diarySelectBar">
+                        <label><input type="checkbox" id="diarySelectAll"> 전체 선택</label>
+                        <span id="diarySelectCount">0개 선택</span>
+                        <button class="btn-sm" id="diaryDeleteSelected" style="color:#e55" disabled>선택 삭제</button>
+                    </div>
                     <!-- 리스트 뷰 -->
                     <div id="diaryListView" class="diary-list"></div>
                     <!-- 캘린더 뷰 -->

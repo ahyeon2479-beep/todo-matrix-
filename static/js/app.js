@@ -888,18 +888,59 @@ async function refreshDiary() {
 
 function renderDiaryList(entries) {
     const $list = document.getElementById('diaryListView');
+    const $bar = document.getElementById('diarySelectBar');
+    const $selectAll = document.getElementById('diarySelectAll');
+    const $count = document.getElementById('diarySelectCount');
+    const $delBtn = document.getElementById('diaryDeleteSelected');
     $list.innerHTML = '';
-    if (!entries.length) { $list.innerHTML = '<div style="color:#999;padding:30px;text-align:center">작성된 일기가 없습니다.</div>'; return; }
+    $selectAll.checked = false;
+    if (!entries.length) {
+        $bar.classList.add('hidden');
+        $list.innerHTML = '<div style="color:#999;padding:30px;text-align:center">작성된 일기가 없습니다.</div>';
+        return;
+    }
+    $bar.classList.remove('hidden');
+
+    function updateSelectCount() {
+        const checked = document.querySelectorAll('.diary-cb:checked');
+        $count.textContent = `${checked.length}개 선택`;
+        $delBtn.disabled = checked.length === 0;
+        const allCbs = document.querySelectorAll('.diary-cb');
+        $selectAll.checked = allCbs.length > 0 && checked.length === allCbs.length;
+    }
+
+    $selectAll.onchange = () => {
+        document.querySelectorAll('.diary-cb').forEach(cb => { cb.checked = $selectAll.checked; });
+        updateSelectCount();
+    };
+
+    $delBtn.onclick = async () => {
+        const checked = [...document.querySelectorAll('.diary-cb:checked')];
+        if (!checked.length) return;
+        if (!confirm(`${checked.length}개 일기를 삭제할까요?`)) return;
+        await Promise.all(checked.map(cb => api(`/api/diary/${cb.value}`, {method:'DELETE'})));
+        refreshDiary();
+    };
+
     entries.forEach(e => {
         const card = document.createElement('div');
         card.className = 'diary-card';
         card.innerHTML = `
-            <div class="dc-date">${e.date_str}</div>
-            <div class="dc-title">${e.mood ? e.mood + ' ' : ''}${esc(e.title || '무제')}</div>
+            <input type="checkbox" class="diary-cb" value="${e.date_str}">
+            <div class="dc-info">
+                <div class="dc-date">${e.date_str}</div>
+                <div class="dc-title">${e.mood ? e.mood + ' ' : ''}${esc(e.title || '무제')}</div>
+            </div>
         `;
-        card.addEventListener('click', () => openDiaryReadModal(e));
+        card.querySelector('.diary-cb').addEventListener('click', (ev) => ev.stopPropagation());
+        card.querySelector('.diary-cb').addEventListener('change', updateSelectCount);
+        card.addEventListener('click', (ev) => {
+            if (ev.target.type === 'checkbox') return;
+            openDiaryReadModal(e);
+        });
         $list.appendChild(card);
     });
+    updateSelectCount();
 }
 
 async function openDiaryReadModal(e) {
