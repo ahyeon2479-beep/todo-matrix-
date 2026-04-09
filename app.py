@@ -424,12 +424,14 @@ def get_diary(date_str):
 @login_required
 def save_diary(date_str):
     data = request.json
-    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).filter(Diary.deleted != True).first()
+    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).first()
     if entry:
         entry.title = data.get("title", entry.title)
         entry.content = data.get("content", entry.content)
         entry.mood = data.get("mood", entry.mood)
         entry.event = data.get("event", entry.event)
+        entry.deleted = False
+        entry.deleted_at = None
         entry.updated_at = datetime.now()
     else:
         entry = Diary(
