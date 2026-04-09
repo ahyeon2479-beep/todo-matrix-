@@ -67,7 +67,6 @@ function setupHeader() {
         btn.addEventListener('click', () => showView(btn.dataset.view));
     });
     document.getElementById('btnAddTodo').addEventListener('click', () => openTodoModal());
-    document.getElementById('sidebarAddBtn').addEventListener('click', () => openTodoModal());
     document.getElementById('showCompleted').addEventListener('change', refreshMatrix);
 
     // Hamburger
@@ -228,6 +227,7 @@ async function refreshMatrix() {
 
 function refreshSummary(todos, show) {
     const $s = document.getElementById('todoSummary');
+    if (!$s) return;
     $s.innerHTML = '';
     const groups = [
         {u:true,i:true,color:'#FFB800',label:'Q1 긴급+중요'},
