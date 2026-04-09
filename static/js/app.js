@@ -332,9 +332,24 @@ document.getElementById('tbLink')?.addEventListener('click', () => {
 });
 
 function resizeDiaryImg(img) {
-    const size = prompt('이미지 크기를 선택하세요:\n1) 작게 (30%)\n2) 중간 (50%)\n3) 크게 (75%)\n4) 원본 (100%)', '2');
-    const widthMap = {'1':'30%','2':'50%','3':'75%','4':'100%'};
-    if (widthMap[size]) img.style.width = widthMap[size];
+    const choice = prompt(
+        '이미지 설정:\n' +
+        '1) 작게 (30%) - 가운데\n' +
+        '2) 중간 (50%) - 가운데\n' +
+        '3) 크게 (75%) - 가운데\n' +
+        '4) 원본 (100%)\n' +
+        '5) 왼쪽 배치 (글이 오른쪽에)\n' +
+        '6) 오른쪽 배치 (글이 왼쪽에)', '2');
+    if (!choice) return;
+    img.style.float = 'none';
+    img.style.marginRight = '0';
+    img.style.marginLeft = '0';
+    if (choice === '1') { img.style.width = '30%'; }
+    else if (choice === '2') { img.style.width = '50%'; }
+    else if (choice === '3') { img.style.width = '75%'; }
+    else if (choice === '4') { img.style.width = '100%'; }
+    else if (choice === '5') { img.style.width = '40%'; img.style.float = 'left'; img.style.marginRight = '16px'; }
+    else if (choice === '6') { img.style.width = '40%'; img.style.float = 'right'; img.style.marginLeft = '16px'; }
 }
 
 /* ── Todo CRUD ───────────────────────────────────────── */
