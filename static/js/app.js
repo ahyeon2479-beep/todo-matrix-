@@ -55,8 +55,11 @@ async function api(url, opts) {
         headers: {'Content-Type':'application/json'},
         ...opts,
     });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    return res.json();
+    if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`${res.status}: ${text.slice(0, 200)}`);
+    }
+    return res.json().catch(() => ({}));
 }
 
 /* ── Header ──────────────────────────────────────────── */
@@ -935,7 +938,7 @@ function refreshDiary() {
         diaryEntriesCache = entries;
         renderBuckets(buckets);
         renderDiaryEntries(entries, year);
-    }).catch(() => {});
+    }).catch(e => console.error('refreshDiary error:', e));
 }
 
 function renderBuckets(buckets) {
@@ -1181,10 +1184,13 @@ async function saveDiary() {
     document.getElementById('diarySave').disabled = true;
     document.getElementById('diarySave').textContent = '저장 중...';
     try {
-        await api(`/api/diary/${dateStr}`, {method:'PUT', body:JSON.stringify(data)});
-        diaryEntriesCache = [];
-        bucketCache = [];
-        closeDiaryEditor();
+        const saved = await api(`/api/diary/${dateStr}`, {method:'PUT', body:JSON.stringify(data)});
+        // 캐시에 즉시 반영
+        const idx = diaryEntriesCache.findIndex(e => e.date_str === dateStr);
+        if (idx !== -1) diaryEntriesCache[idx] = saved;
+        else diaryEntriesCache.unshift(saved);
+        document.getElementById('diaryEditor').classList.add('hidden');
+        showView('diary');
     } catch (err) {
         alert('저장 실패: ' + (err.message || err));
     } finally {
