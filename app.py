@@ -423,7 +423,30 @@ def delete_diary(date_str):
     return jsonify({"ok": True})
 
 
-# ── Sticky Note (고정 메모) API ────────────────────────────
+# ── Fixed Memo (고정 메모) API ─────────────────────────────
+
+@app.route("/api/fixed-memo")
+@login_required
+def get_fixed_memo():
+    memo = Memo.query.filter_by(user_id=current_user.id, date_str="__fixed__").first()
+    return jsonify({"text": memo.text if memo else ""})
+
+
+@app.route("/api/fixed-memo", methods=["PUT"])
+@login_required
+def save_fixed_memo():
+    data = request.json
+    memo = Memo.query.filter_by(user_id=current_user.id, date_str="__fixed__").first()
+    if memo:
+        memo.text = data.get("text", "")
+    else:
+        memo = Memo(user_id=current_user.id, date_str="__fixed__", text=data.get("text", ""))
+        db.session.add(memo)
+    db.session.commit()
+    return jsonify({"text": memo.text})
+
+
+# ── Sticky Note (이번주 할 일) API ────────────────────────
 
 @app.route("/api/sticky")
 @login_required

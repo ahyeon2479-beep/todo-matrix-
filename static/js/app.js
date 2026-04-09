@@ -278,6 +278,22 @@ async function saveMemo() {
     await api(`/api/memos/${matrixDate}`, {method:'PUT', body: JSON.stringify({text})});
 }
 
+/* ── Fixed Memo ──────────────────────────────────────── */
+let fixedMemoTimer;
+async function loadFixedMemo() {
+    const data = await api('/api/fixed-memo');
+    document.getElementById('fixedMemoBox').value = data.text || '';
+}
+document.getElementById('fixedMemoBox')?.addEventListener('input', () => {
+    clearTimeout(fixedMemoTimer);
+    fixedMemoTimer = setTimeout(saveFixedMemo, 800);
+});
+async function saveFixedMemo() {
+    const text = document.getElementById('fixedMemoBox').value;
+    await api('/api/fixed-memo', {method:'PUT', body: JSON.stringify({text})});
+}
+loadFixedMemo();
+
 /* ── Todo CRUD ───────────────────────────────────────── */
 async function toggleTodo(id) {
     await api(`/api/todos/${id}/toggle`, {method:'POST'});
