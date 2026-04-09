@@ -395,56 +395,36 @@ def get_diary_trash():
     return jsonify([e.to_dict() for e in entries])
 
 
-@app.route("/api/diary/restore/<date_str>", methods=["POST"])
+@app.route("/api/diary/restore/<int:diary_id>", methods=["POST"])
 @login_required
-def restore_diary(date_str):
-    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str, deleted=True).first_or_404()
+def restore_diary(diary_id):
+    entry = Diary.query.filter_by(id=diary_id, user_id=current_user.id, deleted=True).first_or_404()
     entry.deleted = False
     entry.deleted_at = None
     db.session.commit()
     return jsonify({"ok": True})
 
 
-@app.route("/api/diary/permanent/<date_str>", methods=["DELETE"])
+@app.route("/api/diary/permanent/<int:diary_id>", methods=["DELETE"])
 @login_required
-def permanent_delete_diary(date_str):
-    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str, deleted=True).first_or_404()
+def permanent_delete_diary(diary_id):
+    entry = Diary.query.filter_by(id=diary_id, user_id=current_user.id, deleted=True).first_or_404()
     db.session.delete(entry)
     db.session.commit()
     return jsonify({"ok": True})
 
 
-@app.route("/api/diary/<date_str>")
+@app.route("/api/diary", methods=["POST"])
 @login_required
-def get_diary(date_str):
-    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).filter(Diary.deleted != True).first()
-    return jsonify(entry.to_dict() if entry else {})
-
-
-@app.route("/api/diary/<date_str>", methods=["PUT"])
-@login_required
-def save_diary(date_str):
+def create_diary():
     try:
         data = request.json
-        entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).first()
-        if entry:
-            entry.title = data.get("title", entry.title)
-            entry.content = data.get("content", entry.content)
-            entry.mood = data.get("mood", entry.mood)
-            entry.event = data.get("event", entry.event)
-            try:
-                entry.deleted = False
-                entry.deleted_at = None
-            except Exception:
-                pass
-            entry.updated_at = datetime.now()
-        else:
-            entry = Diary(
-                user_id=current_user.id, date_str=date_str,
-                title=data.get("title", ""), content=data.get("content", ""),
-                mood=data.get("mood", ""), event=data.get("event", ""),
-            )
-            db.session.add(entry)
+        entry = Diary(
+            user_id=current_user.id, date_str=data.get("date_str", ""),
+            title=data.get("title", ""), content=data.get("content", ""),
+            mood=data.get("mood", ""), event=data.get("event", ""),
+        )
+        db.session.add(entry)
         db.session.commit()
         return jsonify(entry.to_dict())
     except Exception as e:
@@ -452,10 +432,28 @@ def save_diary(date_str):
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/api/diary/<date_str>", methods=["DELETE"])
+@app.route("/api/diary/<int:diary_id>", methods=["PUT"])
 @login_required
-def delete_diary(date_str):
-    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).first_or_404()
+def update_diary(diary_id):
+    try:
+        data = request.json
+        entry = Diary.query.filter_by(id=diary_id, user_id=current_user.id).first_or_404()
+        entry.title = data.get("title", entry.title)
+        entry.content = data.get("content", entry.content)
+        entry.mood = data.get("mood", entry.mood)
+        entry.event = data.get("event", entry.event)
+        entry.updated_at = datetime.now()
+        db.session.commit()
+        return jsonify(entry.to_dict())
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/diary/<int:diary_id>", methods=["DELETE"])
+@login_required
+def delete_diary(diary_id):
+    entry = Diary.query.filter_by(id=diary_id, user_id=current_user.id).first_or_404()
     entry.deleted = True
     entry.deleted_at = datetime.now()
     db.session.commit()
@@ -647,6 +645,12 @@ with app.app_context():
                     db.session.commit()
                 except Exception:
                     db.session.rollback()
+        except Exception:
+            db.session.rollback()
+        # unique constraint 제거 (같은 날짜에 여러 일기 허용)
+        try:
+            db.session.execute(db.text("ALTER TABLE diary DROP CONSTRAINT IF EXISTS diary_user_id_date_str_key"))
+            db.session.commit()
         except Exception:
             db.session.rollback()
         print("DB tables created successfully")

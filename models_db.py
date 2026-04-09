@@ -109,8 +109,6 @@ class Diary(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
-    __table_args__ = (db.UniqueConstraint("user_id", "date_str"),)
-
     def to_dict(self):
         return {
             "id": self.id, "date_str": self.date_str,

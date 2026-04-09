@@ -1043,7 +1043,7 @@ function renderDiaryList(entries) {
         const card = document.createElement('div');
         card.className = 'diary-card';
         card.innerHTML = `
-            <input type="checkbox" class="diary-cb" value="${e.date_str}">
+            <input type="checkbox" class="diary-cb" value="${e.id}">
             <div class="dc-info">
                 <div class="dc-date">${e.date_str}</div>
                 <div class="dc-title">${e.mood ? e.mood + ' ' : ''}${esc(e.title || '무제')}</div>
@@ -1093,7 +1093,7 @@ async function openDiaryReadModal(e) {
     $m.querySelector('.dr-edit-btn').onclick = () => { $m.classList.add('hidden'); openDiaryModal(e); };
     $m.querySelector('.dr-delete-btn').onclick = async () => {
         if (confirm('이 일기를 삭제할까요?')) {
-            await api(`/api/diary/${e.date_str}`, {method:'DELETE'});
+            await api(`/api/diary/${e.id}`, {method:'DELETE'});
             $m.classList.add('hidden');
             refreshDiary();
         }
@@ -1123,9 +1123,12 @@ function renderDiaryCal(entries, year, month) {
     });
 }
 
+let currentEditingDiaryId = null;
+
 function openDiaryModal(entry = null) {
+    currentEditingDiaryId = entry?.id || null;
     const $e = document.getElementById('diaryEditor');
-    document.getElementById('diaryModalTitle').textContent = entry?.content ? '일기 수정' : '일기 쓰기';
+    document.getElementById('diaryModalTitle').textContent = currentEditingDiaryId ? '일기 수정' : '일기 쓰기';
     document.getElementById('diaryDateInput').value = entry?.date_str || todayStr();
     document.getElementById('diaryTitleInput').value = entry?.title || '';
     const $editor = document.getElementById('diaryContentInput');
@@ -1165,17 +1168,17 @@ function closeDiaryEditor() {
     refreshDiary();
 }
 
-async function navDiaryDay(delta) {
+function navDiaryDay(delta) {
     const current = document.getElementById('diaryDateInput').value || todayStr();
     const newDate = shiftDate(current, delta);
-    const entry = await api(`/api/diary/${newDate}`);
-    openDiaryModal(entry?.date_str ? entry : { date_str: newDate });
+    openDiaryModal({ date_str: newDate });
 }
 
 async function saveDiary() {
     const dateStr = document.getElementById('diaryDateInput').value;
     if (!dateStr) { alert('날짜를 선택해주세요'); return; }
     const data = {
+        date_str: dateStr,
         title: document.getElementById('diaryTitleInput').value.trim(),
         content: document.getElementById('diaryContentInput').innerHTML,
         mood: selectedMood,
@@ -1184,11 +1187,15 @@ async function saveDiary() {
     document.getElementById('diarySave').disabled = true;
     document.getElementById('diarySave').textContent = '저장 중...';
     try {
-        const saved = await api(`/api/diary/${dateStr}`, {method:'PUT', body:JSON.stringify(data)});
-        // 캐시에 즉시 반영
-        const idx = diaryEntriesCache.findIndex(e => e.date_str === dateStr);
-        if (idx !== -1) diaryEntriesCache[idx] = saved;
-        else diaryEntriesCache.unshift(saved);
+        let saved;
+        if (currentEditingDiaryId) {
+            saved = await api(`/api/diary/${currentEditingDiaryId}`, {method:'PUT', body:JSON.stringify(data)});
+            const idx = diaryEntriesCache.findIndex(e => e.id === currentEditingDiaryId);
+            if (idx !== -1) diaryEntriesCache[idx] = saved;
+        } else {
+            saved = await api('/api/diary', {method:'POST', body:JSON.stringify(data)});
+            diaryEntriesCache.unshift(saved);
+        }
         document.getElementById('diaryEditor').classList.add('hidden');
         showView('diary');
     } catch (err) {
@@ -1455,7 +1462,7 @@ async function refreshTrash() {
         card.style.opacity = '0.7';
         const delDate = e.deleted_at ? new Date(e.deleted_at).toLocaleDateString('ko-KR') : '';
         card.innerHTML = `
-            <input type="checkbox" class="trash-cb diary-cb" value="${e.date_str}">
+            <input type="checkbox" class="trash-cb" value="${e.id}">
             <div class="dc-info">
                 <div class="dc-date">${e.date_str} <span style="color:#e55;font-size:10px">삭제: ${delDate}</span></div>
                 <div class="dc-title">${e.mood ? e.mood + ' ' : ''}${esc(e.title || '무제')}</div>
