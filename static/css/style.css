@@ -561,6 +561,8 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
 .weekly-item.done .weekly-text { text-decoration: line-through; color: #bbb; }
 .weekly-text { flex: 1; cursor: pointer; line-height: 1.4; }
 .weekly-text:hover { color: #1A73E8; }
+.weekly-edit { background: none; border: none; cursor: pointer; color: #ccc; font-size: 11px; padding: 0 2px; }
+.weekly-edit:hover { color: #1A73E8; }
 .weekly-del { background: none; border: none; cursor: pointer; color: #ccc; font-size: 12px; padding: 0 2px; }
 .weekly-del:hover { color: #e55; }
 .weekly-mobile { display: none; }

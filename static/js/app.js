@@ -160,10 +160,18 @@ function renderStickyTo($el, notes, isMobile) {
     notes.forEach(n => {
         const div = document.createElement('div');
         div.className = 'weekly-item' + (n.done ? ' done' : '');
-        div.innerHTML = `<span class="weekly-text">${esc(n.text)}</span><button class="weekly-del" title="삭제">&times;</button>`;
+        div.innerHTML = `<span class="weekly-text">${esc(n.text)}</span><button class="weekly-edit" title="수정">✎</button><button class="weekly-del" title="삭제">&times;</button>`;
         div.querySelector('.weekly-text').addEventListener('click', async () => {
             await api(`/api/sticky/${n.id}`, {method:'PUT', body:JSON.stringify({done: !n.done})});
             refreshSticky();
+        });
+        div.querySelector('.weekly-edit').addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            const newText = prompt('수정할 내용:', n.text);
+            if (newText !== null && newText.trim() && newText.trim() !== n.text) {
+                await api(`/api/sticky/${n.id}`, {method:'PUT', body:JSON.stringify({text: newText.trim()})});
+                refreshSticky();
+            }
         });
         div.querySelector('.weekly-del').addEventListener('click', async (ev) => {
             ev.stopPropagation();
