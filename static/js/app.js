@@ -328,13 +328,23 @@ document.getElementById('diaryImageInput')?.addEventListener('change', (e) => {
     if (!files.length) return;
     Array.from(files).forEach(file => {
         if (!file.type.startsWith('image/')) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            const img = `<img src="${ev.target.result}" class="diary-img" style="width:50%"> `;
+        const imgEl = new Image();
+        imgEl.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX = 1200;
+            let w = imgEl.width, h = imgEl.height;
+            if (w > MAX || h > MAX) {
+                if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                else { w = Math.round(w * MAX / h); h = MAX; }
+            }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(imgEl, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            const tag = `<img src="${dataUrl}" class="diary-img" style="width:50%"> `;
             document.getElementById('diaryContentInput').focus();
-            document.execCommand('insertHTML', false, img);
+            document.execCommand('insertHTML', false, tag);
         };
-        reader.readAsDataURL(file);
+        imgEl.src = URL.createObjectURL(file);
     });
     e.target.value = '';
 });

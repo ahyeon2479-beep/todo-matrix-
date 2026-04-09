@@ -28,6 +28,7 @@ if _db_url:
 else:
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///todos.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True, "connect_args": {}}
 
 DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
