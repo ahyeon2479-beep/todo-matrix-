@@ -1164,7 +1164,7 @@ async function navDiaryDay(delta) {
     openDiaryModal(entry?.date_str ? entry : { date_str: newDate });
 }
 
-async function saveDiary() {
+function saveDiary() {
     const dateStr = document.getElementById('diaryDateInput').value;
     if (!dateStr) { alert('날짜를 선택해주세요'); return; }
     const data = {
@@ -1173,8 +1173,12 @@ async function saveDiary() {
         mood: selectedMood,
         event: document.getElementById('diaryEventInput').value,
     };
-    await api(`/api/diary/${dateStr}`, {method:'PUT', body:JSON.stringify(data)});
+    // 즉시 화면 전환, API는 백그라운드
+    diaryEntriesCache = [];
     closeDiaryEditor();
+    api(`/api/diary/${dateStr}`, {method:'PUT', body:JSON.stringify(data)}).catch(() => {
+        alert('저장에 실패했습니다. 다시 시도해주세요.');
+    });
 }
 
 async function addBucket() {
