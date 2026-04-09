@@ -55,8 +55,17 @@
                         <div id="todoSummary"></div>
                     </div>
                     <button class="btn-primary btn-full" id="sidebarAddBtn">+ 새 할 일</button>
+                    <hr>
+                    <div class="sidebar-section">
+                        <div class="weekly-header">
+                            <h3>이번주 할 일</h3>
+                            <button class="btn-sm" id="weeklyAddBtn">+</button>
+                        </div>
+                        <div id="weeklyList" class="weekly-list"></div>
+                    </div>
                 </aside>
                 <div class="matrix-main">
+                    <div class="weekly-mobile" id="weeklyMobile"></div>
                     <div class="matrix-date-bar">
                         <button class="btn-sm" id="matrixPrev">&#9664;</button>
                         <span id="matrixDateLabel"></span>

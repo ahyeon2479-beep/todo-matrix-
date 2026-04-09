@@ -550,6 +550,22 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
 }
 
 /* ── Diary Page ──────────────────────────────────────── */
+/* ── Weekly / Sticky Notes ────────────────────────────── */
+.weekly-header { display: flex; align-items: center; justify-content: space-between; }
+.weekly-header h3 { font-size: 13px; }
+.weekly-list { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
+.weekly-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 8px; background: #f8f9fa; border-radius: 5px; font-size: 12px;
+}
+.weekly-item.done .weekly-text { text-decoration: line-through; color: #bbb; }
+.weekly-text { flex: 1; cursor: pointer; line-height: 1.4; }
+.weekly-text:hover { color: #1A73E8; }
+.weekly-del { background: none; border: none; cursor: pointer; color: #ccc; font-size: 12px; padding: 0 2px; }
+.weekly-del:hover { color: #e55; }
+.weekly-mobile { display: none; }
+.weekly-mobile-header { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: bold; color: #1A73E8; margin-bottom: 4px; }
+
 .diary-page { padding: 16px; max-width: 900px; margin: 0 auto; }
 .bucket-section { margin-bottom: 12px; }
 .bucket-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
@@ -976,4 +992,8 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
 
     /* ── 습관 빠른 체크 (모바일만 표시) ──── */
     .habit-quick { display: block; }
+    .weekly-mobile {
+        display: block; background: #fff; border: 1px solid #e0e0e0;
+        border-radius: 8px; padding: 8px 10px; margin: 4px 4px 2px;
+    }
 }

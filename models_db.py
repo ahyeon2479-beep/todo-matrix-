@@ -119,6 +119,17 @@ class Diary(db.Model):
         }
 
 
+class StickyNote(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.String(128), db.ForeignKey("user.id"), nullable=False)
+    text = db.Column(db.String(500), nullable=False)
+    done = db.Column(db.Boolean, default=False)
+    order = db.Column(db.Integer, default=0)
+
+    def to_dict(self):
+        return {"id": self.id, "text": self.text, "done": self.done, "order": self.order}
+
+
 class FreeMemo(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.String(128), db.ForeignKey("user.id"), nullable=False)

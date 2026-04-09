@@ -9,7 +9,7 @@ from authlib.integrations.flask_client import OAuth
 from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 
-from models_db import db, User, Todo, Memo, Habit, HabitCheck, BucketItem, Diary, FreeMemo
+from models_db import db, User, Todo, Memo, Habit, HabitCheck, BucketItem, Diary, FreeMemo, StickyNote
 from holidays_kr import HOLIDAYS_KR
 
 from pathlib import Path
@@ -419,6 +419,47 @@ def save_diary(date_str):
 def delete_diary(date_str):
     entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).first_or_404()
     db.session.delete(entry)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+# ── Sticky Note (고정 메모) API ────────────────────────────
+
+@app.route("/api/sticky")
+@login_required
+def get_sticky():
+    notes = StickyNote.query.filter_by(user_id=current_user.id).order_by(StickyNote.order).all()
+    return jsonify([n.to_dict() for n in notes])
+
+
+@app.route("/api/sticky", methods=["POST"])
+@login_required
+def add_sticky():
+    data = request.json
+    note = StickyNote(user_id=current_user.id, text=data["text"])
+    db.session.add(note)
+    db.session.commit()
+    return jsonify(note.to_dict())
+
+
+@app.route("/api/sticky/<int:nid>", methods=["PUT"])
+@login_required
+def update_sticky(nid):
+    note = StickyNote.query.filter_by(id=nid, user_id=current_user.id).first_or_404()
+    data = request.json
+    if "text" in data:
+        note.text = data["text"]
+    if "done" in data:
+        note.done = data["done"]
+    db.session.commit()
+    return jsonify(note.to_dict())
+
+
+@app.route("/api/sticky/<int:nid>", methods=["DELETE"])
+@login_required
+def delete_sticky(nid):
+    note = StickyNote.query.filter_by(id=nid, user_id=current_user.id).first_or_404()
+    db.session.delete(note)
     db.session.commit()
     return jsonify({"ok": True})
 

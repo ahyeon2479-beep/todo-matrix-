@@ -124,6 +124,56 @@ function setupMatrix() {
         const q = btn.closest('.quadrant');
         btn.addEventListener('click', () => openTodoModal(null, q.dataset.urgent === 'true', q.dataset.important === 'true'));
     });
+    document.getElementById('weeklyAddBtn').addEventListener('click', async () => {
+        const text = prompt('할 일을 입력하세요:');
+        if (!text?.trim()) return;
+        await api('/api/sticky', {method:'POST', body:JSON.stringify({text: text.trim()})});
+        refreshSticky();
+    });
+    refreshSticky();
+}
+
+async function refreshSticky() {
+    const notes = await api('/api/sticky');
+    renderStickyTo(document.getElementById('weeklyList'), notes, false);
+    renderStickyTo(document.getElementById('weeklyMobile'), notes, true);
+}
+
+function renderStickyTo($el, notes, isMobile) {
+    $el.innerHTML = '';
+    if (isMobile) {
+        const header = document.createElement('div');
+        header.className = 'weekly-mobile-header';
+        header.innerHTML = `<span>이번주 할 일</span><button class="btn-sm weekly-mobile-add">+</button>`;
+        header.querySelector('.weekly-mobile-add').addEventListener('click', async () => {
+            const text = prompt('할 일을 입력하세요:');
+            if (!text?.trim()) return;
+            await api('/api/sticky', {method:'POST', body:JSON.stringify({text: text.trim()})});
+            refreshSticky();
+        });
+        $el.appendChild(header);
+    }
+    if (!notes.length) {
+        $el.innerHTML += '<div style="color:#bbb;font-size:11px;padding:4px">+ 버튼으로 할 일을 추가하세요</div>';
+        return;
+    }
+    notes.forEach(n => {
+        const div = document.createElement('div');
+        div.className = 'weekly-item' + (n.done ? ' done' : '');
+        div.innerHTML = `<span class="weekly-text">${esc(n.text)}</span><button class="weekly-del" title="삭제">&times;</button>`;
+        div.querySelector('.weekly-text').addEventListener('click', async () => {
+            await api(`/api/sticky/${n.id}`, {method:'PUT', body:JSON.stringify({done: !n.done})});
+            refreshSticky();
+        });
+        div.querySelector('.weekly-del').addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            if (confirm(`'${n.text}' 삭제?`)) {
+                await api(`/api/sticky/${n.id}`, {method:'DELETE'});
+                refreshSticky();
+            }
+        });
+        $el.appendChild(div);
+    });
 }
 
 function shiftDate(s, delta) {
