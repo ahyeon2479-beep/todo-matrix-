@@ -308,14 +308,11 @@ document.getElementById('tbImage')?.addEventListener('click', () => {
 document.getElementById('diaryImageInput')?.addEventListener('change', (e) => {
     const files = e.target.files;
     if (!files.length) return;
-    const size = prompt('이미지 크기를 선택하세요:\n1) 작게 (30%)\n2) 중간 (50%)\n3) 크게 (75%)\n4) 원본 (100%)', '2');
-    const widthMap = {'1':'30%','2':'50%','3':'75%','4':'100%'};
-    const w = widthMap[size] || '50%';
     Array.from(files).forEach(file => {
         if (!file.type.startsWith('image/')) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
-            const img = `<img src="${ev.target.result}" style="width:${w};border-radius:8px;margin:8px 0;cursor:pointer" onclick="resizeDiaryImg(this)">`;
+            const img = `<img src="${ev.target.result}" class="diary-img" style="width:50%"> `;
             document.getElementById('diaryContentInput').focus();
             document.execCommand('insertHTML', false, img);
         };
@@ -331,26 +328,33 @@ document.getElementById('tbLink')?.addEventListener('click', () => {
     document.execCommand('insertHTML', false, `<a href="${url}" target="_blank" style="color:#1A73E8">${esc(text || url)}</a>`);
 });
 
-function resizeDiaryImg(img) {
-    const choice = prompt(
-        '이미지 설정:\n' +
-        '1) 작게 (30%) - 가운데\n' +
-        '2) 중간 (50%) - 가운데\n' +
-        '3) 크게 (75%) - 가운데\n' +
-        '4) 원본 (100%)\n' +
-        '5) 왼쪽 배치 (글이 오른쪽에)\n' +
-        '6) 오른쪽 배치 (글이 왼쪽에)', '2');
-    if (!choice) return;
-    img.style.float = 'none';
-    img.style.marginRight = '0';
-    img.style.marginLeft = '0';
-    if (choice === '1') { img.style.width = '30%'; }
-    else if (choice === '2') { img.style.width = '50%'; }
-    else if (choice === '3') { img.style.width = '75%'; }
-    else if (choice === '4') { img.style.width = '100%'; }
-    else if (choice === '5') { img.style.width = '40%'; img.style.float = 'left'; img.style.marginRight = '16px'; }
-    else if (choice === '6') { img.style.width = '40%'; img.style.float = 'right'; img.style.marginLeft = '16px'; }
-}
+// 이미지 드래그 리사이즈
+(function() {
+    let resizing = null, startX = 0, startW = 0;
+    document.addEventListener('pointerdown', (e) => {
+        const img = e.target.closest('.de-editor img, .de-editor .diary-img');
+        if (!img) return;
+        e.preventDefault();
+        resizing = img;
+        startX = e.clientX;
+        startW = img.offsetWidth;
+        img.style.outline = '2px solid #1A73E8';
+    });
+    document.addEventListener('pointermove', (e) => {
+        if (!resizing) return;
+        const diff = e.clientX - startX;
+        const newW = Math.max(50, startW + diff);
+        const container = resizing.closest('.de-editor');
+        const maxW = container ? container.offsetWidth - 20 : 800;
+        resizing.style.width = Math.min(newW, maxW) + 'px';
+    });
+    document.addEventListener('pointerup', () => {
+        if (resizing) {
+            resizing.style.outline = '';
+            resizing = null;
+        }
+    });
+})();
 
 /* ── Todo CRUD ───────────────────────────────────────── */
 async function toggleTodo(id) {
