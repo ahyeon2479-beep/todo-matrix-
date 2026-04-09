@@ -424,25 +424,32 @@ def get_diary(date_str):
 @app.route("/api/diary/<date_str>", methods=["PUT"])
 @login_required
 def save_diary(date_str):
-    data = request.json
-    entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).first()
-    if entry:
-        entry.title = data.get("title", entry.title)
-        entry.content = data.get("content", entry.content)
-        entry.mood = data.get("mood", entry.mood)
-        entry.event = data.get("event", entry.event)
-        entry.deleted = False
-        entry.deleted_at = None
-        entry.updated_at = datetime.now()
-    else:
-        entry = Diary(
-            user_id=current_user.id, date_str=date_str,
-            title=data.get("title", ""), content=data.get("content", ""),
-            mood=data.get("mood", ""), event=data.get("event", ""),
-        )
-        db.session.add(entry)
-    db.session.commit()
-    return jsonify(entry.to_dict())
+    try:
+        data = request.json
+        entry = Diary.query.filter_by(user_id=current_user.id, date_str=date_str).first()
+        if entry:
+            entry.title = data.get("title", entry.title)
+            entry.content = data.get("content", entry.content)
+            entry.mood = data.get("mood", entry.mood)
+            entry.event = data.get("event", entry.event)
+            try:
+                entry.deleted = False
+                entry.deleted_at = None
+            except Exception:
+                pass
+            entry.updated_at = datetime.now()
+        else:
+            entry = Diary(
+                user_id=current_user.id, date_str=date_str,
+                title=data.get("title", ""), content=data.get("content", ""),
+                mood=data.get("mood", ""), event=data.get("event", ""),
+            )
+            db.session.add(entry)
+        db.session.commit()
+        return jsonify(entry.to_dict())
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/diary/<date_str>", methods=["DELETE"])
@@ -630,9 +637,16 @@ with app.app_context():
                 db.session.execute(db.text("ALTER TABLE diary ADD COLUMN event TEXT DEFAULT ''"))
                 db.session.commit()
             if 'deleted' not in cols:
-                db.session.execute(db.text("ALTER TABLE diary ADD COLUMN deleted BOOLEAN DEFAULT 0"))
-                db.session.execute(db.text("ALTER TABLE diary ADD COLUMN deleted_at DATETIME"))
-                db.session.commit()
+                try:
+                    db.session.execute(db.text("ALTER TABLE diary ADD COLUMN deleted BOOLEAN DEFAULT false"))
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                try:
+                    db.session.execute(db.text("ALTER TABLE diary ADD COLUMN deleted_at TIMESTAMP"))
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
         except Exception:
             db.session.rollback()
         print("DB tables created successfully")

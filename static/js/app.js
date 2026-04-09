@@ -55,6 +55,7 @@ async function api(url, opts) {
         headers: {'Content-Type':'application/json'},
         ...opts,
     });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
     return res.json();
 }
 
@@ -1186,8 +1187,8 @@ function saveDiary() {
     // 즉시 화면 전환, API는 백그라운드
     diaryEntriesCache = [];
     closeDiaryEditor();
-    api(`/api/diary/${dateStr}`, {method:'PUT', body:JSON.stringify(data)}).catch(() => {
-        alert('저장에 실패했습니다. 다시 시도해주세요.');
+    api(`/api/diary/${dateStr}`, {method:'PUT', body:JSON.stringify(data)}).catch((err) => {
+        alert('저장 실패: ' + (err.message || err));
     });
 }
 
