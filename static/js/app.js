@@ -203,11 +203,21 @@ function shiftDate(s, delta) {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-async function refreshMatrix() {
-    document.getElementById('matrixDateLabel').textContent = fmtDate(matrixDate) + ' 할일 목록';
-    const todos = await api(`/api/todos?date=${matrixDate}`);
-    const show = document.getElementById('showCompleted').checked;
+let todosCache = {};
+let memoCache = {};
 
+function refreshMatrix() {
+    document.getElementById('matrixDateLabel').textContent = fmtDate(matrixDate) + ' 할일 목록';
+    if (todosCache[matrixDate]) renderMatrix(todosCache[matrixDate]);
+    api(`/api/todos?date=${matrixDate}`).then(todos => {
+        todosCache[matrixDate] = todos;
+        renderMatrix(todos);
+    });
+    loadMemo();
+}
+
+function renderMatrix(todos) {
+    const show = document.getElementById('showCompleted').checked;
     document.querySelectorAll('.quadrant').forEach(q => {
         const u = q.dataset.urgent === 'true';
         const imp = q.dataset.important === 'true';
@@ -236,7 +246,6 @@ async function refreshMatrix() {
         });
     });
     refreshSummary(todos, show);
-    loadMemo();
 }
 
 function refreshSummary(todos, show) {
@@ -268,17 +277,23 @@ function refreshSummary(todos, show) {
 
 /* ── Memo ────────────────────────────────────────────── */
 let memoTimer;
-async function loadMemo() {
-    const data = await api(`/api/memos/${matrixDate}`);
-    document.getElementById('memoBox').value = data.text || '';
+function loadMemo() {
+    if (memoCache[matrixDate] !== undefined) {
+        document.getElementById('memoBox').value = memoCache[matrixDate];
+    }
+    api(`/api/memos/${matrixDate}`).then(data => {
+        memoCache[matrixDate] = data.text || '';
+        document.getElementById('memoBox').value = memoCache[matrixDate];
+    });
 }
 document.getElementById('memoBox')?.addEventListener('input', () => {
+    memoCache[matrixDate] = document.getElementById('memoBox').value;
     clearTimeout(memoTimer);
     memoTimer = setTimeout(saveMemo, 800);
 });
-async function saveMemo() {
+function saveMemo() {
     const text = document.getElementById('memoBox').value;
-    await api(`/api/memos/${matrixDate}`, {method:'PUT', body: JSON.stringify({text})});
+    api(`/api/memos/${matrixDate}`, {method:'PUT', body: JSON.stringify({text})});
 }
 
 /* ── Fixed Memo ──────────────────────────────────────── */
@@ -360,15 +375,22 @@ document.getElementById('tbLink')?.addEventListener('click', () => {
 })();
 
 /* ── Todo CRUD ───────────────────────────────────────── */
-async function toggleTodo(id) {
-    await api(`/api/todos/${id}/toggle`, {method:'POST'});
-    refreshMatrix();
+function toggleTodo(id) {
+    const todos = todosCache[matrixDate];
+    if (todos) {
+        const t = todos.find(x => x.id === id);
+        if (t) t.completed = !t.completed;
+        renderMatrix(todos);
+    }
+    api(`/api/todos/${id}/toggle`, {method:'POST'});
 }
-async function deleteTodo(id, title) {
+function deleteTodo(id, title) {
     if (!confirm(`'${title}'을(를) 삭제할까요?`)) return;
-    await api(`/api/todos/${id}`, {method:'DELETE'});
-    if (currentView === 'matrix') refreshMatrix();
-    else if (currentView === 'repeat') refreshRepeatView();
+    if (todosCache[matrixDate]) {
+        todosCache[matrixDate] = todosCache[matrixDate].filter(t => t.id !== id);
+        renderMatrix(todosCache[matrixDate]);
+    }
+    api(`/api/todos/${id}`, {method:'DELETE'});
 }
 
 /* ── Calendar View ───────────────────────────────────── */
@@ -800,16 +822,22 @@ async function saveTodoModal() {
     };
 
     const editId = document.getElementById('todoEditId').value;
-    if (editId) {
-        await api(`/api/todos/${editId}`, {method:'PUT', body: JSON.stringify(data)});
-    } else {
-        await api('/api/todos', {method:'POST', body: JSON.stringify(data)});
-    }
-
     document.getElementById('todoModal').classList.add('hidden');
-    if (currentView === 'matrix') refreshMatrix();
-    else if (currentView === 'calendar') refreshCalendar();
-    else if (currentView === 'repeat') refreshRepeatView();
+    // 캐시 무효화 (서버에서 다시 받아오게)
+    todosCache = {};
+    if (editId) {
+        api(`/api/todos/${editId}`, {method:'PUT', body: JSON.stringify(data)}).then(() => {
+            if (currentView === 'matrix') refreshMatrix();
+            else if (currentView === 'calendar') refreshCalendar();
+            else if (currentView === 'repeat') refreshRepeatView();
+        });
+    } else {
+        api('/api/todos', {method:'POST', body: JSON.stringify(data)}).then(() => {
+            if (currentView === 'matrix') refreshMatrix();
+            else if (currentView === 'calendar') refreshCalendar();
+            else if (currentView === 'repeat') refreshRepeatView();
+        });
+    }
 }
 
 function openHabitModal() {
@@ -881,20 +909,41 @@ function setupDiary() {
     document.getElementById('bucketAddBtn').addEventListener('click', addBucket);
 }
 
-async function refreshDiary() {
-    // bucket
+let bucketCache = [];
+let diaryEntriesCache = [];
+
+function refreshDiary() {
     const year = diaryYear || new Date().getFullYear();
     document.getElementById('bucketTitle').textContent = `올해 반드시 이루겠습니다`;
-    const buckets = await api(`/api/bucket?year=${year}`);
+
+    // 캐시가 있으면 즉시 렌더
+    if (bucketCache.length || diaryEntriesCache.length) {
+        renderBuckets(bucketCache);
+        renderDiaryEntries(diaryEntriesCache, year);
+    }
+
+    // 병렬 fetch
+    let url = `/api/diary?year=${year}`;
+    if (diaryMonth) url += `&month=${diaryMonth}`;
+    Promise.all([api(`/api/bucket?year=${year}`), api(url)]).then(([buckets, entries]) => {
+        bucketCache = buckets;
+        diaryEntriesCache = entries;
+        renderBuckets(buckets);
+        renderDiaryEntries(entries, year);
+    });
+}
+
+function renderBuckets(buckets) {
     const $bl = document.getElementById('bucketList');
     $bl.innerHTML = '';
     buckets.forEach(b => {
         const div = document.createElement('div');
         div.className = 'bucket-item' + (b.completed ? ' done' : '');
         div.innerHTML = `<input type="checkbox" ${b.completed ? 'checked' : ''}><span>${esc(b.text)}</span><button class="bucket-edit-btn" title="수정">✎</button><button class="bucket-del-btn" title="삭제">&times;</button>`;
-        div.querySelector('input').addEventListener('change', async () => {
-            await api(`/api/bucket/${b.id}`, {method:'PUT', body:JSON.stringify({completed:!b.completed})});
-            refreshDiary();
+        div.querySelector('input').addEventListener('change', () => {
+            b.completed = !b.completed;
+            renderBuckets(bucketCache);
+            api(`/api/bucket/${b.id}`, {method:'PUT', body:JSON.stringify({completed:b.completed})});
         });
         div.querySelector('.bucket-edit-btn').addEventListener('click', () => {
             const span = div.querySelector('span');
@@ -903,45 +952,37 @@ async function refreshDiary() {
             div.querySelector('.bucket-edit-btn').style.display = 'none';
             div.querySelector('.bucket-del-btn').style.display = 'none';
             const input = document.createElement('input');
-            input.type = 'text';
-            input.value = oldText;
-            input.className = 'bucket-edit-input';
+            input.type = 'text'; input.value = oldText; input.className = 'bucket-edit-input';
             const saveBtn = document.createElement('button');
-            saveBtn.className = 'bucket-save-btn';
-            saveBtn.textContent = '✓';
-            saveBtn.title = '저장';
+            saveBtn.className = 'bucket-save-btn'; saveBtn.textContent = '✓';
             const cancelBtn = document.createElement('button');
-            cancelBtn.className = 'bucket-cancel-btn';
-            cancelBtn.textContent = '✕';
-            cancelBtn.title = '취소';
+            cancelBtn.className = 'bucket-cancel-btn'; cancelBtn.textContent = '✕';
             span.after(input, saveBtn, cancelBtn);
             input.focus();
-            const save = async () => {
+            const save = () => {
                 const newText = input.value.trim();
                 if (newText && newText !== oldText) {
-                    await api(`/api/bucket/${b.id}`, {method:'PUT', body:JSON.stringify({text: newText})});
+                    b.text = newText;
+                    api(`/api/bucket/${b.id}`, {method:'PUT', body:JSON.stringify({text: newText})});
                 }
-                refreshDiary();
+                renderBuckets(bucketCache);
             };
-            const cancel = () => refreshDiary();
             saveBtn.addEventListener('click', save);
-            cancelBtn.addEventListener('click', cancel);
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') save();
-                if (e.key === 'Escape') cancel();
-            });
+            cancelBtn.addEventListener('click', () => renderBuckets(bucketCache));
+            input.addEventListener('keydown', (e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') renderBuckets(bucketCache); });
         });
-        div.querySelector('.bucket-del-btn').addEventListener('click', async () => {
-            if (confirm(`'${b.text}' 삭제?`)) { await api(`/api/bucket/${b.id}`, {method:'DELETE'}); refreshDiary(); }
+        div.querySelector('.bucket-del-btn').addEventListener('click', () => {
+            if (confirm(`'${b.text}' 삭제?`)) {
+                bucketCache = bucketCache.filter(x => x.id !== b.id);
+                renderBuckets(bucketCache);
+                api(`/api/bucket/${b.id}`, {method:'DELETE'});
+            }
         });
         $bl.appendChild(div);
     });
+}
 
-    // diary entries
-    let url = `/api/diary?year=${year}`;
-    if (diaryMonth) url += `&month=${diaryMonth}`;
-    const entries = await api(url);
-
+function renderDiaryEntries(entries, year) {
     if (diaryViewMode === 'list') {
         document.getElementById('diaryListView').classList.remove('hidden');
         document.getElementById('diaryCalView').classList.add('hidden');
