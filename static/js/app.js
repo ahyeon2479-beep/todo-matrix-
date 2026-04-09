@@ -123,61 +123,71 @@ function setupMatrix() {
         const q = btn.closest('.quadrant');
         btn.addEventListener('click', () => openTodoModal(null, q.dataset.urgent === 'true', q.dataset.important === 'true'));
     });
-    document.getElementById('weeklyAddBtn').addEventListener('click', async () => {
-        const text = prompt('할 일을 입력하세요:');
-        if (!text?.trim()) return;
-        await api('/api/sticky', {method:'POST', body:JSON.stringify({text: text.trim()})});
-        refreshSticky();
-    });
+    document.getElementById('weeklyAddBtn').addEventListener('click', () => addStickyItem());
     refreshSticky();
 }
 
-async function refreshSticky() {
-    const notes = await api('/api/sticky');
-    renderStickyTo(document.getElementById('weeklyList'), notes, false);
-    renderStickyTo(document.getElementById('weeklyMobile'), notes, true);
+let stickyCache = [];
+
+async function addStickyItem() {
+    const text = prompt('할 일을 입력하세요:');
+    if (!text?.trim()) return;
+    const tempId = Date.now();
+    stickyCache.push({id: tempId, text: text.trim(), done: false});
+    renderAllSticky();
+    const res = await api('/api/sticky', {method:'POST', body:JSON.stringify({text: text.trim()})});
+    const idx = stickyCache.findIndex(n => n.id === tempId);
+    if (idx !== -1) stickyCache[idx].id = res.id;
 }
 
-function renderStickyTo($el, notes, isMobile) {
+async function refreshSticky() {
+    stickyCache = await api('/api/sticky');
+    renderAllSticky();
+}
+
+function renderAllSticky() {
+    renderStickyTo(document.getElementById('weeklyList'), false);
+    renderStickyTo(document.getElementById('weeklyMobile'), true);
+}
+
+function renderStickyTo($el, isMobile) {
     $el.innerHTML = '';
     if (isMobile) {
         const header = document.createElement('div');
         header.className = 'weekly-mobile-header';
         header.innerHTML = `<span>이번주 할 일</span><button class="btn-sm weekly-mobile-add">+</button>`;
-        header.querySelector('.weekly-mobile-add').addEventListener('click', async () => {
-            const text = prompt('할 일을 입력하세요:');
-            if (!text?.trim()) return;
-            await api('/api/sticky', {method:'POST', body:JSON.stringify({text: text.trim()})});
-            refreshSticky();
-        });
+        header.querySelector('.weekly-mobile-add').addEventListener('click', () => addStickyItem());
         $el.appendChild(header);
     }
-    if (!notes.length) {
+    if (!stickyCache.length) {
         $el.innerHTML += '<div style="color:#bbb;font-size:11px;padding:4px">+ 버튼으로 할 일을 추가하세요</div>';
         return;
     }
-    const sorted = [...notes].sort((a, b) => a.done - b.done);
+    const sorted = [...stickyCache].sort((a, b) => a.done - b.done);
     sorted.forEach(n => {
         const div = document.createElement('div');
         div.className = 'weekly-item' + (n.done ? ' done' : '');
         div.innerHTML = `<input type="checkbox" class="weekly-cb" ${n.done ? 'checked' : ''}><span class="weekly-text">${esc(n.text)}</span><button class="weekly-edit" title="수정">✎</button><button class="weekly-del" title="삭제">&times;</button>`;
-        div.querySelector('.weekly-cb').addEventListener('change', async () => {
-            await api(`/api/sticky/${n.id}`, {method:'PUT', body:JSON.stringify({done: !n.done})});
-            refreshSticky();
+        div.querySelector('.weekly-cb').addEventListener('change', () => {
+            n.done = !n.done;
+            renderAllSticky();
+            api(`/api/sticky/${n.id}`, {method:'PUT', body:JSON.stringify({done: n.done})});
         });
-        div.querySelector('.weekly-edit').addEventListener('click', async (ev) => {
+        div.querySelector('.weekly-edit').addEventListener('click', (ev) => {
             ev.stopPropagation();
             const newText = prompt('수정할 내용:', n.text);
             if (newText !== null && newText.trim() && newText.trim() !== n.text) {
-                await api(`/api/sticky/${n.id}`, {method:'PUT', body:JSON.stringify({text: newText.trim()})});
-                refreshSticky();
+                n.text = newText.trim();
+                renderAllSticky();
+                api(`/api/sticky/${n.id}`, {method:'PUT', body:JSON.stringify({text: n.text})});
             }
         });
-        div.querySelector('.weekly-del').addEventListener('click', async (ev) => {
+        div.querySelector('.weekly-del').addEventListener('click', (ev) => {
             ev.stopPropagation();
             if (confirm(`'${n.text}' 삭제?`)) {
-                await api(`/api/sticky/${n.id}`, {method:'DELETE'});
-                refreshSticky();
+                stickyCache = stickyCache.filter(x => x.id !== n.id);
+                renderAllSticky();
+                api(`/api/sticky/${n.id}`, {method:'DELETE'});
             }
         });
         $el.appendChild(div);
