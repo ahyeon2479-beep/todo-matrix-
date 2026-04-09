@@ -297,7 +297,17 @@
             </div>
             <div class="de-content">
                 <input type="text" id="diaryTitleInput" class="de-title-input" placeholder="오늘의 한 줄 제목을 입력하세요">
-                <textarea id="diaryContentInput" placeholder="오늘 하루를 기록해보세요...&#10;&#10;무슨 일이 있었나요?&#10;어떤 생각을 했나요?&#10;감사한 일은 무엇인가요?"></textarea>
+                <div class="de-toolbar">
+                    <button type="button" class="tb-btn" data-cmd="bold" title="굵게"><b>B</b></button>
+                    <button type="button" class="tb-btn" data-cmd="italic" title="기울임"><i>I</i></button>
+                    <button type="button" class="tb-btn" data-cmd="underline" title="밑줄"><u>U</u></button>
+                    <button type="button" class="tb-btn" data-cmd="strikeThrough" title="취소선"><s>S</s></button>
+                    <span class="tb-sep"></span>
+                    <button type="button" class="tb-btn" id="tbImage" title="이미지 추가">&#128247;</button>
+                    <button type="button" class="tb-btn" id="tbLink" title="링크 추가">&#128279;</button>
+                    <input type="file" id="diaryImageInput" accept="image/*" multiple style="display:none">
+                </div>
+                <div class="de-editor" id="diaryContentInput" contenteditable="true" data-placeholder="오늘 하루를 기록해보세요..."></div>
             </div>
         </div>
         <div class="de-toast hidden" id="diaryToast">저장되었습니다 ✓</div>

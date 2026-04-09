@@ -294,6 +294,40 @@ async function saveFixedMemo() {
 }
 loadFixedMemo();
 
+/* ── Diary Editor Toolbar ───────────────────────────── */
+document.querySelectorAll('.tb-btn[data-cmd]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.execCommand(btn.dataset.cmd, false, null);
+        document.getElementById('diaryContentInput').focus();
+    });
+});
+document.getElementById('tbImage')?.addEventListener('click', () => {
+    document.getElementById('diaryImageInput').click();
+});
+document.getElementById('diaryImageInput')?.addEventListener('change', (e) => {
+    const files = e.target.files;
+    if (!files.length) return;
+    Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const img = `<img src="${ev.target.result}" style="max-width:100%;border-radius:8px;margin:8px 0">`;
+            document.getElementById('diaryContentInput').focus();
+            document.execCommand('insertHTML', false, img);
+        };
+        reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+});
+document.getElementById('tbLink')?.addEventListener('click', () => {
+    const url = prompt('URL을 입력하세요:', 'https://');
+    if (!url) return;
+    const text = prompt('표시할 텍스트:', url);
+    document.getElementById('diaryContentInput').focus();
+    document.execCommand('insertHTML', false, `<a href="${url}" target="_blank" style="color:#1A73E8">${esc(text || url)}</a>`);
+});
+
 /* ── Todo CRUD ───────────────────────────────────────── */
 async function toggleTodo(id) {
     await api(`/api/todos/${id}/toggle`, {method:'POST'});
@@ -948,7 +982,7 @@ async function openDiaryReadModal(e) {
     document.getElementById('drDate').textContent = e.date_str;
     document.getElementById('drMood').textContent = e.mood || '';
     document.getElementById('drTitle').textContent = e.title || '무제';
-    document.getElementById('drContent').innerHTML = esc(e.content || '').replace(/\n/g, '<br>');
+    document.getElementById('drContent').innerHTML = e.content || '';
     const $eventContent = document.getElementById('drEventContent');
     $eventContent.innerHTML = e.event ? esc(e.event).replace(/\n/g, '<br>') : '-';
     // 하루 요약 로드
@@ -1010,13 +1044,14 @@ function openDiaryModal(entry = null) {
     document.getElementById('diaryModalTitle').textContent = entry?.content ? '일기 수정' : '일기 쓰기';
     document.getElementById('diaryDateInput').value = entry?.date_str || todayStr();
     document.getElementById('diaryTitleInput').value = entry?.title || '';
-    document.getElementById('diaryContentInput').value = entry?.content || '';
+    const $editor = document.getElementById('diaryContentInput');
+    $editor.innerHTML = entry?.content || '';
     document.getElementById('diaryEventInput').value = entry?.event || '';
     document.getElementById('diaryEditDate').value = entry?.date_str || '';
     selectedMood = entry?.mood || '';
     document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('selected', b.dataset.mood === selectedMood));
     $e.classList.remove('hidden');
-    setTimeout(() => document.getElementById('diaryContentInput').focus(), 100);
+    setTimeout(() => $editor.focus(), 100);
     loadDaySummary(document.getElementById('diaryDateInput').value);
 }
 
@@ -1057,7 +1092,7 @@ async function saveDiary() {
     if (!dateStr) { alert('날짜를 선택해주세요'); return; }
     const data = {
         title: document.getElementById('diaryTitleInput').value.trim(),
-        content: document.getElementById('diaryContentInput').value,
+        content: document.getElementById('diaryContentInput').innerHTML,
         mood: selectedMood,
         event: document.getElementById('diaryEventInput').value,
     };
