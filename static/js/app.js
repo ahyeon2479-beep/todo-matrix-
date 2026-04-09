@@ -927,13 +927,7 @@ function refreshDiary() {
     const year = diaryYear || new Date().getFullYear();
     document.getElementById('bucketTitle').textContent = `올해 반드시 이루겠습니다`;
 
-    // 캐시가 있으면 즉시 렌더
-    if (bucketCache.length || diaryEntriesCache.length) {
-        renderBuckets(bucketCache);
-        renderDiaryEntries(diaryEntriesCache, year);
-    }
-
-    // 병렬 fetch
+    // 병렬 fetch (항상 서버에서 최신 데이터)
     let url = `/api/diary?year=${year}`;
     if (diaryMonth) url += `&month=${diaryMonth}`;
     Promise.all([api(`/api/bucket?year=${year}`), api(url)]).then(([buckets, entries]) => {
@@ -941,7 +935,7 @@ function refreshDiary() {
         diaryEntriesCache = entries;
         renderBuckets(buckets);
         renderDiaryEntries(entries, year);
-    });
+    }).catch(() => {});
 }
 
 function renderBuckets(buckets) {
@@ -1175,7 +1169,7 @@ async function navDiaryDay(delta) {
     openDiaryModal(entry?.date_str ? entry : { date_str: newDate });
 }
 
-function saveDiary() {
+async function saveDiary() {
     const dateStr = document.getElementById('diaryDateInput').value;
     if (!dateStr) { alert('날짜를 선택해주세요'); return; }
     const data = {
@@ -1184,12 +1178,19 @@ function saveDiary() {
         mood: selectedMood,
         event: document.getElementById('diaryEventInput').value,
     };
-    // 즉시 화면 전환, API는 백그라운드
-    diaryEntriesCache = [];
-    closeDiaryEditor();
-    api(`/api/diary/${dateStr}`, {method:'PUT', body:JSON.stringify(data)}).catch((err) => {
+    document.getElementById('diarySave').disabled = true;
+    document.getElementById('diarySave').textContent = '저장 중...';
+    try {
+        await api(`/api/diary/${dateStr}`, {method:'PUT', body:JSON.stringify(data)});
+        diaryEntriesCache = [];
+        bucketCache = [];
+        closeDiaryEditor();
+    } catch (err) {
         alert('저장 실패: ' + (err.message || err));
-    });
+    } finally {
+        document.getElementById('diarySave').disabled = false;
+        document.getElementById('diarySave').textContent = '저장';
+    }
 }
 
 async function addBucket() {
