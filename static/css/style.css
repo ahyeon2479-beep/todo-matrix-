@@ -558,9 +558,9 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
     display: flex; align-items: center; gap: 6px;
     padding: 4px 8px; background: #f8f9fa; border-radius: 5px; font-size: 12px;
 }
-.weekly-item.done .weekly-text { text-decoration: line-through; color: #bbb; }
-.weekly-text { flex: 1; cursor: pointer; line-height: 1.4; }
-.weekly-text:hover { color: #1A73E8; }
+.weekly-item.done .weekly-text { color: #bbb; }
+.weekly-cb { width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
+.weekly-text { flex: 1; line-height: 1.4; }
 .weekly-edit { background: none; border: none; cursor: pointer; color: #ccc; font-size: 11px; padding: 0 2px; }
 .weekly-edit:hover { color: #1A73E8; }
 .weekly-del { background: none; border: none; cursor: pointer; color: #ccc; font-size: 12px; padding: 0 2px; }

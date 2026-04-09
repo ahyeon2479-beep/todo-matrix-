@@ -156,11 +156,12 @@ function renderStickyTo($el, notes, isMobile) {
         $el.innerHTML += '<div style="color:#bbb;font-size:11px;padding:4px">+ 버튼으로 할 일을 추가하세요</div>';
         return;
     }
-    notes.forEach(n => {
+    const sorted = [...notes].sort((a, b) => a.done - b.done);
+    sorted.forEach(n => {
         const div = document.createElement('div');
         div.className = 'weekly-item' + (n.done ? ' done' : '');
-        div.innerHTML = `<span class="weekly-text">${esc(n.text)}</span><button class="weekly-edit" title="수정">✎</button><button class="weekly-del" title="삭제">&times;</button>`;
-        div.querySelector('.weekly-text').addEventListener('click', async () => {
+        div.innerHTML = `<input type="checkbox" class="weekly-cb" ${n.done ? 'checked' : ''}><span class="weekly-text">${esc(n.text)}</span><button class="weekly-edit" title="수정">✎</button><button class="weekly-del" title="삭제">&times;</button>`;
+        div.querySelector('.weekly-cb').addEventListener('change', async () => {
             await api(`/api/sticky/${n.id}`, {method:'PUT', body:JSON.stringify({done: !n.done})});
             refreshSticky();
         });
