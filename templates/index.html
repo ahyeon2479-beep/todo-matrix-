@@ -333,6 +333,16 @@
         <div class="de-toast hidden" id="diaryToast">저장되었습니다 ✓</div>
     </div>
 
+    <!-- ── 모달: 날짜별 일기 선택 ──────────────────────── -->
+    <div class="modal-overlay hidden" id="diaryPickerModal">
+        <div class="diary-picker-popup">
+            <button class="dr-close-btn" id="diaryPickerClose">&times;</button>
+            <h3 id="diaryPickerTitle"></h3>
+            <div id="diaryPickerList" class="diary-picker-list"></div>
+            <button class="btn-primary btn-sm" id="diaryPickerNew" style="margin-top:10px;width:100%">+ 이 날짜에 새 일기 쓰기</button>
+        </div>
+    </div>
+
     <!-- ── 모달: 일기 읽기 ───────────────────────────── -->
     <div class="modal-overlay hidden" id="diaryReadModal">
         <div class="diary-read-popup">

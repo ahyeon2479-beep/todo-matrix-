@@ -1125,17 +1125,36 @@ function renderDiaryCal(entries, year, month) {
             cell.addEventListener('click', () => openDiaryReadModal(list[0]));
         } else if (list.length > 1) {
             cell.innerHTML += `<div class="dcc-mood">${list[0].mood||''}</div><div class="dcc-title">${esc(list[0].title||'')}</div><div class="dcc-count">${list.length}개</div>`;
-            cell.addEventListener('click', () => {
-                diaryViewMode = 'list';
-                diaryMonth = mo;
-                document.getElementById('diaryMonthFilter').value = mo;
-                refreshDiary();
-            });
+            cell.addEventListener('click', () => openDiaryPicker(ds, list));
         } else {
             cell.addEventListener('click', () => openDiaryModal({date_str: ds}));
         }
         $cal.appendChild(cell);
     });
+}
+
+function openDiaryPicker(dateStr, list) {
+    const $m = document.getElementById('diaryPickerModal');
+    document.getElementById('diaryPickerTitle').textContent = `${dateStr} 일기 (${list.length}개)`;
+    const $list = document.getElementById('diaryPickerList');
+    $list.innerHTML = '';
+    list.forEach(e => {
+        const item = document.createElement('div');
+        item.className = 'diary-picker-item';
+        item.innerHTML = `<span class="dpi-mood">${e.mood||''}</span><span class="dpi-title">${esc(e.title || '무제')}</span>`;
+        item.addEventListener('click', () => {
+            $m.classList.add('hidden');
+            openDiaryReadModal(e);
+        });
+        $list.appendChild(item);
+    });
+    document.getElementById('diaryPickerNew').onclick = () => {
+        $m.classList.add('hidden');
+        openDiaryModal({date_str: dateStr});
+    };
+    document.getElementById('diaryPickerClose').onclick = () => $m.classList.add('hidden');
+    $m.addEventListener('click', (ev) => { if (ev.target === $m) $m.classList.add('hidden'); });
+    $m.classList.remove('hidden');
 }
 
 let currentEditingDiaryId = null;
