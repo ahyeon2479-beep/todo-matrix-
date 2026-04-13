@@ -1292,6 +1292,21 @@ async function refreshMemoFolders() {
         el.classList.toggle('active', el.dataset.folder === String(currentMemoFolder));
         el.onclick = () => selectMemoFolder(el.dataset.folder, el.dataset.folder === 'all' ? '메모장' : '미분류');
     });
+    // 모든 폴더에 드롭 이벤트
+    document.querySelectorAll('.memo-folder-item').forEach(el => {
+        el.addEventListener('dragover', (e) => { e.preventDefault(); el.classList.add('drag-over'); });
+        el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+        el.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            el.classList.remove('drag-over');
+            const memoId = e.dataTransfer.getData('text/plain');
+            if (!memoId) return;
+            const folderId = el.dataset.folder === 'none' ? null : (el.dataset.folder === 'all' ? undefined : parseInt(el.dataset.folder));
+            if (folderId === undefined) return; // '전체'에는 드롭 불가
+            await api(`/api/free-memos/${memoId}`, {method:'PUT', body:JSON.stringify({folder_id: folderId})});
+            refreshFreeMemo();
+        });
+    });
 }
 
 function selectMemoFolder(folderId, folderName) {
@@ -1313,6 +1328,8 @@ async function refreshFreeMemo() {
     memos.forEach(m => {
         const card = document.createElement('div');
         card.className = 'memo-card';
+        card.draggable = true;
+        card.dataset.memoId = m.id;
         const preview = renderMarkdown(m.content).replace(/<[^>]*>/g, '');
         const shortPreview = preview.length > 100 ? preview.slice(0, 100) + '…' : preview;
         const dateStr = m.updated_at ? new Date(m.updated_at).toLocaleDateString('ko') : '';
@@ -1327,6 +1344,11 @@ async function refreshFreeMemo() {
                 <button class="btn-sm del-btn" style="color:#e55">삭제</button>
             </div>
         `;
+        card.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', m.id);
+            card.style.opacity = '0.5';
+        });
+        card.addEventListener('dragend', () => { card.style.opacity = '1'; });
         card.querySelector('.edit-btn').addEventListener('click', (ev) => { ev.stopPropagation(); openMemoModal(m); });
         card.querySelector('.del-btn').addEventListener('click', async (ev) => {
             ev.stopPropagation();
