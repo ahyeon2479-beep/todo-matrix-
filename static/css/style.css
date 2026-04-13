@@ -671,6 +671,7 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
 .diary-cal-cell .dcc-day { font-size: 11px; font-weight: bold; }
 .diary-cal-cell .dcc-mood { font-size: 14px; }
 .diary-cal-cell .dcc-title { font-size: 9px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.diary-cal-cell .dcc-count { font-size: 9px; color: #1A73E8; font-weight: bold; }
 .diary-cal-cell.has-entry { background: #f8f4ff; }
 
 /* ── Diary Editor (전체 페이지) ────────────────────── */

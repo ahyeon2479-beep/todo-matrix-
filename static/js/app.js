@@ -1106,19 +1106,34 @@ function renderDiaryCal(entries, year, month) {
     const $cal = document.getElementById('diaryCalView');
     $cal.innerHTML = '';
     const byDate = {};
-    entries.forEach(e => byDate[e.date_str] = e);
+    entries.forEach(e => {
+        if (!byDate[e.date_str]) byDate[e.date_str] = [];
+        byDate[e.date_str].push(e);
+    });
     const grid = monthGrid(year, month);
     ['일','월','화','수','목','금','토'].forEach(d => {
         $cal.innerHTML += `<div class="diary-cal-head">${d}</div>`;
     });
     grid.flat().forEach(([day, yr, mo, ov]) => {
         const ds = `${yr}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const e = byDate[ds];
+        const list = byDate[ds] || [];
         const cell = document.createElement('div');
-        cell.className = 'diary-cal-cell' + (e ? ' has-entry' : '') + (ov ? ' overflow' : '');
+        cell.className = 'diary-cal-cell' + (list.length ? ' has-entry' : '') + (ov ? ' overflow' : '');
         cell.innerHTML = `<div class="dcc-day">${day}</div>`;
-        if (e) cell.innerHTML += `<div class="dcc-mood">${e.mood||''}</div><div class="dcc-title">${esc(e.title||'')}</div>`;
-        cell.addEventListener('click', () => openDiaryModal(e || {date_str: ds}));
+        if (list.length === 1) {
+            cell.innerHTML += `<div class="dcc-mood">${list[0].mood||''}</div><div class="dcc-title">${esc(list[0].title||'')}</div>`;
+            cell.addEventListener('click', () => openDiaryReadModal(list[0]));
+        } else if (list.length > 1) {
+            cell.innerHTML += `<div class="dcc-mood">${list[0].mood||''}</div><div class="dcc-title">${esc(list[0].title||'')}</div><div class="dcc-count">${list.length}개</div>`;
+            cell.addEventListener('click', () => {
+                diaryViewMode = 'list';
+                diaryMonth = mo;
+                document.getElementById('diaryMonthFilter').value = mo;
+                refreshDiary();
+            });
+        } else {
+            cell.addEventListener('click', () => openDiaryModal({date_str: ds}));
+        }
         $cal.appendChild(cell);
     });
 }
