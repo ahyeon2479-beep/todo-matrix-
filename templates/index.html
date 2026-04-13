@@ -389,6 +389,19 @@
     </div>
 
     <!-- ── 모달: 메모 작성 ───────────────────────────── -->
+    <!-- ── 모달: 메모 읽기 ───────────────────────────── -->
+    <div class="modal-overlay hidden" id="memoReadModal">
+        <div class="diary-read-popup">
+            <button class="dr-close-btn" id="memoReadClose">&times;</button>
+            <h2 class="dr-title" id="memoReadTitle"></h2>
+            <div class="dr-content" id="memoReadContent"></div>
+            <div class="dr-actions">
+                <button class="btn-sm" id="memoReadEdit">수정</button>
+                <button class="btn-sm" id="memoReadDelete" style="color:#e55">삭제</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay hidden" id="freeMemoModal">
         <div class="modal memo-editor-modal">
             <div class="memo-editor-header">

@@ -1401,9 +1401,27 @@ async function refreshFreeMemo() {
             ev.stopPropagation();
             if (confirm(`'${m.title}' 삭제?`)) { await api(`/api/free-memos/${m.id}`, {method:'DELETE'}); refreshFreeMemo(); }
         });
-        card.addEventListener('click', () => openMemoModal(m));
+        card.addEventListener('click', () => openMemoReadModal(m));
         $list.appendChild(card);
     });
+}
+
+function openMemoReadModal(memo) {
+    const $m = document.getElementById('memoReadModal');
+    document.getElementById('memoReadTitle').textContent = memo.title || '무제';
+    const rc = memo.content || '';
+    document.getElementById('memoReadContent').innerHTML = rc.includes('<') ? rc : rc.replace(/\n/g, '<br>');
+    document.getElementById('memoReadClose').onclick = () => $m.classList.add('hidden');
+    document.getElementById('memoReadEdit').onclick = () => { $m.classList.add('hidden'); openMemoModal(memo); };
+    document.getElementById('memoReadDelete').onclick = async () => {
+        if (confirm(`'${memo.title}' 삭제?`)) {
+            await api(`/api/free-memos/${memo.id}`, {method:'DELETE'});
+            $m.classList.add('hidden');
+            refreshFreeMemo();
+        }
+    };
+    $m.addEventListener('click', (ev) => { if (ev.target === $m) $m.classList.add('hidden'); });
+    $m.classList.remove('hidden');
 }
 
 function openMemoModal(memo = null) {
