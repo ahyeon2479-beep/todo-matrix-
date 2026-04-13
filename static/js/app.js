@@ -1257,7 +1257,54 @@ function setupFreeMemo() {
     document.getElementById('memoAddBtn').addEventListener('click', () => openMemoModal());
     document.getElementById('memoCancel').addEventListener('click', () => document.getElementById('freeMemoModal').classList.add('hidden'));
     document.getElementById('memoSave').addEventListener('click', saveFreeMemo);
-    document.getElementById('memoPreviewBtn').addEventListener('click', toggleMemoPreview);
+    // 메모 에디터 툴바
+    document.querySelectorAll('.tb-btn[data-memo-cmd]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.execCommand(btn.dataset.memoCmd, false, null);
+            document.getElementById('memoContentInput').focus();
+        });
+    });
+    document.getElementById('memoTbCheck')?.addEventListener('click', () => {
+        document.getElementById('memoContentInput').focus();
+        document.execCommand('insertHTML', false, '<div><input type="checkbox" onclick="this.toggleAttribute(\'checked\')"> <span>할 일</span></div>');
+    });
+    document.getElementById('memoTbImage')?.addEventListener('click', () => document.getElementById('memoImageInput').click());
+    document.getElementById('memoImageInput')?.addEventListener('change', (e) => {
+        Array.from(e.target.files).forEach(file => {
+            if (!file.type.startsWith('image/')) return;
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX = 1200;
+                let w = img.width, h = img.height;
+                if (w > MAX || h > MAX) { if (w > h) { h = Math.round(h*MAX/w); w=MAX; } else { w = Math.round(w*MAX/h); h=MAX; } }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                const tag = `<img src="${canvas.toDataURL('image/jpeg',0.7)}" style="width:50%;border-radius:8px;margin:8px 0;cursor:pointer" onclick="resizeDiaryImg(this)"> `;
+                document.getElementById('memoContentInput').focus();
+                document.execCommand('insertHTML', false, tag);
+            };
+            img.src = URL.createObjectURL(file);
+        });
+        e.target.value = '';
+    });
+    document.getElementById('memoTbLink')?.addEventListener('click', () => {
+        const url = prompt('URL을 입력하세요:', 'https://');
+        if (!url) return;
+        const text = prompt('표시할 텍스트:', url);
+        document.getElementById('memoContentInput').focus();
+        document.execCommand('insertHTML', false, `<a href="${url}" target="_blank" style="color:#1A73E8">${esc(text||url)}</a>`);
+    });
+    document.getElementById('memoTbYoutube')?.addEventListener('click', () => {
+        const url = prompt('유튜브 URL을 입력하세요:');
+        if (!url) return;
+        const match = url.match(/(?:youtu\.be\/|v=)([a-zA-Z0-9_-]{11})/);
+        if (!match) { alert('유효한 유튜브 URL이 아닙니다.'); return; }
+        const embed = `<div style="margin:8px 0"><iframe width="100%" height="250" src="https://www.youtube.com/embed/${match[1]}" frameborder="0" allowfullscreen style="border-radius:8px"></iframe></div>`;
+        document.getElementById('memoContentInput').focus();
+        document.execCommand('insertHTML', false, embed);
+    });
     document.getElementById('memoFolderAddBtn').addEventListener('click', async () => {
         const name = prompt('폴더 이름을 입력하세요:');
         if (!name?.trim()) return;
@@ -1363,9 +1410,10 @@ function openMemoModal(memo = null) {
     const $m = document.getElementById('freeMemoModal');
     document.getElementById('memoModalTitle').textContent = memo ? '메모 수정' : '메모 등록';
     document.getElementById('memoTitleInput').value = memo?.title || '';
-    document.getElementById('memoContentInput').value = memo?.content || '';
+    const $editor = document.getElementById('memoContentInput');
+    const raw = memo?.content || '';
+    $editor.innerHTML = raw.includes('<') ? raw : raw.replace(/\n/g, '<br>');
     document.getElementById('memoEditId').value = memo?.id || '';
-    // 폴더 선택 드롭다운 설정
     let $folderSelect = document.getElementById('memoFolderSelect');
     if ($folderSelect) {
         $folderSelect.innerHTML = '<option value="">미분류</option>';
@@ -1376,7 +1424,6 @@ function openMemoModal(memo = null) {
             $folderSelect.value = currentMemoFolder;
         }
     }
-    document.getElementById('memoPreview').classList.add('hidden');
     $m.classList.remove('hidden');
     document.getElementById('memoTitleInput').focus();
 }
@@ -1384,7 +1431,7 @@ function openMemoModal(memo = null) {
 async function saveFreeMemo() {
     const data = {
         title: document.getElementById('memoTitleInput').value.trim(),
-        content: document.getElementById('memoContentInput').value,
+        content: document.getElementById('memoContentInput').innerHTML,
         folder_id: document.getElementById('memoFolderSelect')?.value || null,
     };
     if (data.folder_id === '') data.folder_id = null;

@@ -390,25 +390,29 @@
 
     <!-- ── 모달: 메모 작성 ───────────────────────────── -->
     <div class="modal-overlay hidden" id="freeMemoModal">
-        <div class="modal">
-            <h3 id="memoModalTitle">메모 등록</h3>
-            <label>폴더</label>
-            <select id="memoFolderSelect" style="width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:13px;font-family:inherit;margin-bottom:8px">
-                <option value="">미분류</option>
-            </select>
-            <label>제목</label>
-            <input type="text" id="memoTitleInput" placeholder="메모 제목">
-            <label>내용 (마크다운 지원: **볼드**, *이탤릭*, [링크](URL))</label>
-            <textarea id="memoContentInput" rows="10" placeholder="자유롭게 메모하세요..."></textarea>
-            <div class="memo-preview-toggle">
-                <button class="btn-sm" id="memoPreviewBtn">미리보기</button>
+        <div class="modal memo-editor-modal">
+            <div class="memo-editor-header">
+                <h3 id="memoModalTitle">메모 등록</h3>
+                <div style="display:flex;gap:6px;align-items:center">
+                    <select id="memoFolderSelect" class="memo-folder-select"><option value="">미분류</option></select>
+                    <button class="btn-cancel" id="memoCancel">취소</button>
+                    <button class="btn-primary" id="memoSave">저장</button>
+                </div>
             </div>
-            <div class="memo-preview hidden" id="memoPreview"></div>
+            <input type="text" id="memoTitleInput" class="memo-title-input" placeholder="제목을 입력하세요">
+            <div class="memo-toolbar">
+                <button type="button" class="tb-btn" data-memo-cmd="bold" title="굵게"><b>B</b></button>
+                <button type="button" class="tb-btn" data-memo-cmd="strikeThrough" title="취소선"><s>S</s></button>
+                <button type="button" class="tb-btn" data-memo-cmd="insertUnorderedList" title="목록">☰</button>
+                <button type="button" class="tb-btn" id="memoTbCheck" title="체크리스트">☑</button>
+                <span class="tb-sep"></span>
+                <button type="button" class="tb-btn" id="memoTbImage" title="이미지">📷</button>
+                <button type="button" class="tb-btn" id="memoTbLink" title="링크">🔗</button>
+                <button type="button" class="tb-btn" id="memoTbYoutube" title="유튜브">▶</button>
+                <input type="file" id="memoImageInput" accept="image/*" multiple style="display:none">
+            </div>
+            <div class="memo-editor-body" id="memoContentInput" contenteditable="true" data-placeholder="자유롭게 메모하세요..."></div>
             <input type="hidden" id="memoEditId">
-            <div class="modal-buttons">
-                <button class="btn-cancel" id="memoCancel">취소</button>
-                <button class="btn-primary" id="memoSave">저장</button>
-            </div>
         </div>
     </div>
 
