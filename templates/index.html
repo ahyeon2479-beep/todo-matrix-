@@ -238,12 +238,25 @@
 
         <!-- 메모장 뷰 -->
         <div class="view hidden" id="freeMemoView">
-            <div class="memo-page">
-                <div class="memo-header">
-                    <h2>메모장</h2>
-                    <button class="btn-primary" id="memoAddBtn">+ 메모 등록</button>
+            <div class="memo-page-layout">
+                <aside class="memo-sidebar">
+                    <div class="memo-folder-header">
+                        <h3>폴더</h3>
+                        <button class="btn-sm" id="memoFolderAddBtn" title="폴더 추가">+</button>
+                    </div>
+                    <div class="memo-folder-list">
+                        <div class="memo-folder-item active" data-folder="all">📁 전체</div>
+                        <div class="memo-folder-item" data-folder="none">📄 미분류</div>
+                        <div id="memoFolderListCustom"></div>
+                    </div>
+                </aside>
+                <div class="memo-main">
+                    <div class="memo-header">
+                        <h2 id="memoCurrentFolder">메모장</h2>
+                        <button class="btn-primary" id="memoAddBtn">+ 메모 등록</button>
+                    </div>
+                    <div class="memo-list" id="freeMemoList"></div>
                 </div>
-                <div class="memo-list" id="freeMemoList"></div>
             </div>
         </div>
 
@@ -379,6 +392,10 @@
     <div class="modal-overlay hidden" id="freeMemoModal">
         <div class="modal">
             <h3 id="memoModalTitle">메모 등록</h3>
+            <label>폴더</label>
+            <select id="memoFolderSelect" style="width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:13px;font-family:inherit;margin-bottom:8px">
+                <option value="">미분류</option>
+            </select>
             <label>제목</label>
             <input type="text" id="memoTitleInput" placeholder="메모 제목">
             <label>내용 (마크다운 지원: **볼드**, *이탤릭*, [링크](URL))</label>

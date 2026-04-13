@@ -1250,15 +1250,63 @@ async function addBucket() {
 /* ══════════════════════════════════════════════════════
    메모장
    ══════════════════════════════════════════════════════ */
+let currentMemoFolder = 'all'; // 'all', 'none', or folder id number
+let memoFoldersCache = [];
+
 function setupFreeMemo() {
     document.getElementById('memoAddBtn').addEventListener('click', () => openMemoModal());
     document.getElementById('memoCancel').addEventListener('click', () => document.getElementById('freeMemoModal').classList.add('hidden'));
     document.getElementById('memoSave').addEventListener('click', saveFreeMemo);
     document.getElementById('memoPreviewBtn').addEventListener('click', toggleMemoPreview);
+    document.getElementById('memoFolderAddBtn').addEventListener('click', async () => {
+        const name = prompt('폴더 이름을 입력하세요:');
+        if (!name?.trim()) return;
+        await api('/api/memo-folders', {method:'POST', body:JSON.stringify({name: name.trim()})});
+        refreshMemoFolders();
+    });
+}
+
+async function refreshMemoFolders() {
+    memoFoldersCache = await api('/api/memo-folders');
+    const $custom = document.getElementById('memoFolderListCustom');
+    $custom.innerHTML = '';
+    memoFoldersCache.forEach(f => {
+        const div = document.createElement('div');
+        div.className = 'memo-folder-item' + (currentMemoFolder == f.id ? ' active' : '');
+        div.dataset.folder = f.id;
+        div.innerHTML = `<span class="mf-name">📂 ${esc(f.name)}</span><button class="mf-del" title="삭제">&times;</button>`;
+        div.querySelector('.mf-name').addEventListener('click', () => selectMemoFolder(f.id, f.name));
+        div.querySelector('.mf-del').addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            if (confirm(`'${f.name}' 폴더를 삭제할까요? 안의 메모는 미분류로 이동됩니다.`)) {
+                await api(`/api/memo-folders/${f.id}`, {method:'DELETE'});
+                if (currentMemoFolder == f.id) { currentMemoFolder = 'all'; }
+                refreshMemoFolders();
+                refreshFreeMemo();
+            }
+        });
+        $custom.appendChild(div);
+    });
+    // 고정 항목 active 상태
+    document.querySelectorAll('.memo-folder-item[data-folder="all"], .memo-folder-item[data-folder="none"]').forEach(el => {
+        el.classList.toggle('active', el.dataset.folder === String(currentMemoFolder));
+        el.onclick = () => selectMemoFolder(el.dataset.folder, el.dataset.folder === 'all' ? '메모장' : '미분류');
+    });
+}
+
+function selectMemoFolder(folderId, folderName) {
+    currentMemoFolder = folderId;
+    document.getElementById('memoCurrentFolder').textContent = folderName || '메모장';
+    document.querySelectorAll('.memo-folder-item').forEach(el => el.classList.toggle('active', el.dataset.folder == folderId));
+    refreshFreeMemo();
 }
 
 async function refreshFreeMemo() {
-    const memos = await api('/api/free-memos');
+    await refreshMemoFolders();
+    let url = '/api/free-memos';
+    if (currentMemoFolder === 'none') url += '?folder_id=0';
+    else if (currentMemoFolder !== 'all') url += `?folder_id=${currentMemoFolder}`;
+    const memos = await api(url);
     const $list = document.getElementById('freeMemoList');
     $list.innerHTML = '';
     if (!memos.length) { $list.innerHTML = '<div style="color:#999;padding:30px;text-align:center">메모가 없습니다.<br>\'+ 메모 등록\' 버튼으로 추가하세요.</div>'; return; }
@@ -1268,9 +1316,11 @@ async function refreshFreeMemo() {
         const preview = renderMarkdown(m.content).replace(/<[^>]*>/g, '');
         const shortPreview = preview.length > 100 ? preview.slice(0, 100) + '…' : preview;
         const dateStr = m.updated_at ? new Date(m.updated_at).toLocaleDateString('ko') : '';
+        const folderName = m.folder_id ? (memoFoldersCache.find(f => f.id === m.folder_id)?.name || '') : '';
         card.innerHTML = `
             <div class="mc-title">${esc(m.title)}</div>
             <div class="mc-preview">${esc(shortPreview)}</div>
+            ${folderName && currentMemoFolder === 'all' ? `<div class="mc-folder">📂 ${esc(folderName)}</div>` : ''}
             <div class="mc-date">${dateStr}</div>
             <div class="mc-actions">
                 <button class="btn-sm edit-btn">수정</button>
@@ -1293,6 +1343,17 @@ function openMemoModal(memo = null) {
     document.getElementById('memoTitleInput').value = memo?.title || '';
     document.getElementById('memoContentInput').value = memo?.content || '';
     document.getElementById('memoEditId').value = memo?.id || '';
+    // 폴더 선택 드롭다운 설정
+    let $folderSelect = document.getElementById('memoFolderSelect');
+    if ($folderSelect) {
+        $folderSelect.innerHTML = '<option value="">미분류</option>';
+        memoFoldersCache.forEach(f => {
+            $folderSelect.innerHTML += `<option value="${f.id}" ${memo?.folder_id == f.id ? 'selected' : ''}>${esc(f.name)}</option>`;
+        });
+        if (!memo && currentMemoFolder !== 'all' && currentMemoFolder !== 'none') {
+            $folderSelect.value = currentMemoFolder;
+        }
+    }
     document.getElementById('memoPreview').classList.add('hidden');
     $m.classList.remove('hidden');
     document.getElementById('memoTitleInput').focus();
@@ -1302,7 +1363,10 @@ async function saveFreeMemo() {
     const data = {
         title: document.getElementById('memoTitleInput').value.trim(),
         content: document.getElementById('memoContentInput').value,
+        folder_id: document.getElementById('memoFolderSelect')?.value || null,
     };
+    if (data.folder_id === '') data.folder_id = null;
+    else if (data.folder_id) data.folder_id = parseInt(data.folder_id);
     const editId = document.getElementById('memoEditId').value;
     if (editId) {
         await api(`/api/free-memos/${editId}`, {method:'PUT', body:JSON.stringify(data)});

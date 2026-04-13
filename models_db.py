@@ -131,9 +131,20 @@ class StickyNote(db.Model):
         return {"id": self.id, "text": self.text, "done": self.done, "order": self.order}
 
 
+class MemoFolder(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.String(128), db.ForeignKey("user.id"), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    order = db.Column(db.Integer, default=0)
+
+    def to_dict(self):
+        return {"id": self.id, "name": self.name, "order": self.order}
+
+
 class FreeMemo(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.String(128), db.ForeignKey("user.id"), nullable=False)
+    folder_id = db.Column(db.Integer, db.ForeignKey("memo_folder.id"), nullable=True)
     title = db.Column(db.String(300), default="")
     content = db.Column(db.Text, default="")
     created_at = db.Column(db.DateTime, default=datetime.now)
@@ -141,7 +152,7 @@ class FreeMemo(db.Model):
 
     def to_dict(self):
         return {
-            "id": self.id, "title": self.title, "content": self.content,
+            "id": self.id, "folder_id": self.folder_id, "title": self.title, "content": self.content,
             "created_at": self.created_at.isoformat() if self.created_at else "",
             "updated_at": self.updated_at.isoformat() if self.updated_at else "",
         }

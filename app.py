@@ -9,7 +9,7 @@ from authlib.integrations.flask_client import OAuth
 from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 
-from models_db import db, User, Todo, Memo, Habit, HabitCheck, BucketItem, Diary, FreeMemo, StickyNote
+from models_db import db, User, Todo, Memo, Habit, HabitCheck, BucketItem, Diary, FreeMemo, StickyNote, MemoFolder
 from holidays_kr import HOLIDAYS_KR
 
 from pathlib import Path
@@ -557,12 +557,60 @@ def export_diary_page():
     return render_template("diary_print.html", entries=entries, user=current_user, cache_bust=cache_bust())
 
 
+# ── Memo Folder API ───────────────────────────────────────
+
+@app.route("/api/memo-folders")
+@login_required
+def get_memo_folders():
+    folders = MemoFolder.query.filter_by(user_id=current_user.id).order_by(MemoFolder.order).all()
+    return jsonify([f.to_dict() for f in folders])
+
+
+@app.route("/api/memo-folders", methods=["POST"])
+@login_required
+def add_memo_folder():
+    data = request.json
+    folder = MemoFolder(user_id=current_user.id, name=data.get("name", "새 폴더"))
+    db.session.add(folder)
+    db.session.commit()
+    return jsonify(folder.to_dict()), 201
+
+
+@app.route("/api/memo-folders/<int:fid>", methods=["PUT"])
+@login_required
+def update_memo_folder(fid):
+    folder = MemoFolder.query.filter_by(id=fid, user_id=current_user.id).first_or_404()
+    data = request.json
+    if "name" in data:
+        folder.name = data["name"]
+    db.session.commit()
+    return jsonify(folder.to_dict())
+
+
+@app.route("/api/memo-folders/<int:fid>", methods=["DELETE"])
+@login_required
+def delete_memo_folder(fid):
+    folder = MemoFolder.query.filter_by(id=fid, user_id=current_user.id).first_or_404()
+    # 폴더 안 메모들은 폴더 없음으로 이동
+    FreeMemo.query.filter_by(folder_id=fid, user_id=current_user.id).update({"folder_id": None})
+    db.session.delete(folder)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
 # ── Free Memo API ─────────────────────────────────────────
 
 @app.route("/api/free-memos")
 @login_required
 def get_free_memos():
-    memos = FreeMemo.query.filter_by(user_id=current_user.id).order_by(FreeMemo.updated_at.desc()).all()
+    folder_id = request.args.get("folder_id", type=int)
+    q = FreeMemo.query.filter_by(user_id=current_user.id)
+    if folder_id is not None:
+        if folder_id == 0:
+            q = q.filter(FreeMemo.folder_id.is_(None))
+        else:
+            q = q.filter_by(folder_id=folder_id)
+    memos = q.order_by(FreeMemo.updated_at.desc()).all()
     return jsonify([m.to_dict() for m in memos])
 
 
@@ -572,6 +620,7 @@ def add_free_memo():
     data = request.json
     memo = FreeMemo(
         user_id=current_user.id,
+        folder_id=data.get("folder_id"),
         title=data.get("title", "").strip() or "제목 없음",
         content=data.get("content", ""),
     )
@@ -589,6 +638,8 @@ def update_free_memo(memo_id):
         memo.title = data["title"]
     if "content" in data:
         memo.content = data["content"]
+    if "folder_id" in data:
+        memo.folder_id = data["folder_id"]
     memo.updated_at = datetime.now()
     db.session.commit()
     return jsonify(memo.to_dict())
@@ -650,6 +701,12 @@ with app.app_context():
         # unique constraint 제거 (같은 날짜에 여러 일기 허용)
         try:
             db.session.execute(db.text("ALTER TABLE diary DROP CONSTRAINT IF EXISTS diary_user_id_date_str_key"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+        # free_memo에 folder_id 컬럼 추가
+        try:
+            db.session.execute(db.text("ALTER TABLE free_memo ADD COLUMN folder_id INTEGER"))
             db.session.commit()
         except Exception:
             db.session.rollback()

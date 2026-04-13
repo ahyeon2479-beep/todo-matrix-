@@ -889,9 +889,36 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
 }
 
 /* ── Free Memo Page ──────────────────────────────────── */
-.memo-page { padding: 16px; max-width: 900px; margin: 0 auto; }
+.memo-page-layout { display: flex; height: 100%; }
+.memo-sidebar {
+    width: 200px; min-width: 200px; border-right: 1px solid #e0e0e0;
+    padding: 12px; background: #fafafa; overflow-y: auto;
+}
+.memo-folder-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.memo-folder-header h3 { font-size: 13px; color: #555; }
+.memo-folder-list { display: flex; flex-direction: column; gap: 2px; }
+.memo-folder-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; color: #555;
+}
+.memo-folder-item:hover { background: #e8f0fe; }
+.memo-folder-item.active { background: #d2e3fc; color: #1A73E8; font-weight: bold; }
+.mf-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mf-del { background: none; border: none; cursor: pointer; color: #ccc; font-size: 11px; display: none; }
+.memo-folder-item:hover .mf-del { display: inline; }
+.mf-del:hover { color: #e55; }
+.memo-main { flex: 1; padding: 16px; overflow-y: auto; }
 .memo-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .memo-header h2 { font-size: 16px; }
+.mc-folder { font-size: 10px; color: #1A73E8; margin-top: 4px; }
+@media (max-width: 768px) {
+    .memo-page-layout { flex-direction: column; }
+    .memo-sidebar { width: 100%; min-width: 100%; border-right: none; border-bottom: 1px solid #e0e0e0; padding: 8px; flex-direction: row; overflow-x: auto; }
+    .memo-folder-list { flex-direction: row; flex-wrap: wrap; gap: 4px; }
+    .memo-folder-item { padding: 4px 10px; font-size: 11px; white-space: nowrap; }
+    .mf-del { display: none !important; }
+    .memo-main { padding: 10px; }
+}
 .memo-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
 .memo-card {
     background: white; border: 1px solid #e0e0e0; border-radius: 10px;
