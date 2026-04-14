@@ -1121,4 +1121,49 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
         display: block; background: #fff; border: 1px solid #e0e0e0;
         border-radius: 8px; padding: 8px 10px; margin: 4px 4px 2px;
     }
+
+    /* ── 일기 목록/카드 ──────────────────── */
+    .diary-page { padding: 8px; }
+    .diary-toolbar { flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+    .diary-toolbar h2 { font-size: 14px; width: 100%; }
+    .diary-filters { gap: 2px; }
+    .diary-filters select { font-size: 11px; padding: 3px 6px; }
+    .diary-view-toggle { font-size: 11px; }
+    .diary-download-btn { font-size: 13px; padding: 3px 6px; }
+    .diary-select-bar { flex-wrap: wrap; gap: 6px; padding: 6px 8px; font-size: 11px; }
+    .diary-card { padding: 10px 12px; gap: 8px; }
+    .diary-card .dc-title { font-size: 13px; }
+    .diary-card .dc-date { font-size: 10px; }
+    .diary-card .diary-cb { width: 14px; height: 14px; }
+    .bucket-section { padding: 0 4px; }
+    .bucket-header h2 { font-size: 14px; }
+    .bucket-item { font-size: 12px; padding: 5px 8px; }
+
+    /* ── 일기 선택 팝업 ──────────────────── */
+    .diary-picker-popup { width: 95%; padding: 16px; }
+    .diary-picker-popup h3 { font-size: 14px; }
+    .diary-picker-item { padding: 8px 10px; font-size: 12px; }
+
+    /* ── 일기 내보내기 ───────────────────── */
+    .export-page { padding: 10px; }
+    .export-header h2 { font-size: 14px; }
+    .export-subtitle { font-size: 11px; }
+    .export-filter { flex-wrap: wrap; gap: 4px; }
+    .export-filter select { font-size: 11px; }
+    .export-info { font-size: 11px; }
+    .export-actions { flex-wrap: wrap; gap: 4px; }
+    .export-actions button { font-size: 12px; padding: 6px 12px; }
+    .export-row { padding: 8px 10px; gap: 8px; }
+    .export-row-title { font-size: 12px; }
+
+    /* ── 일기 휴지통 ─────────────────────── */
+    .diary-select-bar button { font-size: 11px; padding: 4px 8px; }
+
+    /* ── 햄버거 메뉴 ─────────────────────── */
+    .hamburger-menu { left: 10px; right: auto; min-width: 180px; }
+    .hamburger-menu button { font-size: 13px; padding: 10px 12px; }
+
+    /* ── 읽기 팝업 내부 ──────────────────── */
+    .dr-info-row { flex-direction: column; gap: 6px; }
+    .dr-event-box, .dr-summary { flex: none; width: 100%; }
 }
