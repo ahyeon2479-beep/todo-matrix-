@@ -29,7 +29,7 @@ else:
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///todos.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True, "connect_args": {}}
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True, "pool_recycle": 300}
 
 DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
 def cache_bust():
@@ -700,39 +700,6 @@ def _matches_repeat(todo, date_str):
 with app.app_context():
     try:
         db.create_all()
-        # 기존 diary 테이블에 event 컬럼이 없으면 추가
-        try:
-            from sqlalchemy import inspect
-            insp = inspect(db.engine)
-            cols = [c['name'] for c in insp.get_columns('diary')]
-            if 'event' not in cols:
-                db.session.execute(db.text("ALTER TABLE diary ADD COLUMN event TEXT DEFAULT ''"))
-                db.session.commit()
-            if 'deleted' not in cols:
-                try:
-                    db.session.execute(db.text("ALTER TABLE diary ADD COLUMN deleted BOOLEAN DEFAULT false"))
-                    db.session.commit()
-                except Exception:
-                    db.session.rollback()
-                try:
-                    db.session.execute(db.text("ALTER TABLE diary ADD COLUMN deleted_at TIMESTAMP"))
-                    db.session.commit()
-                except Exception:
-                    db.session.rollback()
-        except Exception:
-            db.session.rollback()
-        # unique constraint 제거 (같은 날짜에 여러 일기 허용)
-        try:
-            db.session.execute(db.text("ALTER TABLE diary DROP CONSTRAINT IF EXISTS diary_user_id_date_str_key"))
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-        # free_memo에 folder_id 컬럼 추가
-        try:
-            db.session.execute(db.text("ALTER TABLE free_memo ADD COLUMN folder_id INTEGER"))
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
         print("DB tables created successfully")
     except Exception as e:
         print(f"DB create_all error: {e}")
