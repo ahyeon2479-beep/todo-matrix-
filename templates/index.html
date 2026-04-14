@@ -2,7 +2,13 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1A73E8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Todo Matrix">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
     <title>Todo Matrix</title>
     <link rel="stylesheet" href="/static/css/style.css?v={{ cache_bust }}">
 </head>
@@ -23,6 +29,7 @@
             <button class="nav-btn active" id="btnHabitFull" data-view="habitFull">습관 체크</button>
             <button class="nav-btn" id="btnDiary" data-view="diary">일기장</button>
             <button class="nav-btn" id="btnFreeMemo" data-view="freeMemo">메모장</button>
+            <button class="nav-btn" id="btnSupport" data-view="support">지원사업</button>
             <button class="btn-primary" id="btnAddTodo">+ 새 할 일</button>
             <div class="user-info">
                 <span id="userName">{{ user.name }}</span>
@@ -286,6 +293,34 @@
                     <button class="btn-sm" id="exportTxtBtn" disabled>텍스트 파일</button>
                 </div>
                 <div class="export-list" id="exportList"></div>
+            </div>
+        </div>
+
+        <!-- ── 지원사업 모니터링 뷰 ─────────────────── -->
+        <div class="view hidden" id="supportView">
+            <div class="support-page">
+                <div class="support-header">
+                    <h2>지원사업 모니터링</h2>
+                    <div class="support-actions">
+                        <button class="btn-sm" id="supportRefreshBtn">업데이트</button>
+                        <button class="btn-sm" id="supportMarkSeenBtn">모두 읽음</button>
+                        <span class="support-last-update" id="supportLastUpdate"></span>
+                    </div>
+                </div>
+                <div class="support-stats" id="supportStats"></div>
+                <div class="support-filters">
+                    <select id="supportSiteFilter">
+                        <option value="">전체 사이트</option>
+                    </select>
+                    <select id="supportStatusFilter">
+                        <option value="">전체</option>
+                        <option value="new">새로운 항목</option>
+                        <option value="bookmarked">북마크</option>
+                    </select>
+                    <input type="text" id="supportSearchInput" placeholder="검색어 입력..." class="support-search">
+                </div>
+                <div class="support-list" id="supportList"></div>
+                <div class="support-pagination" id="supportPagination"></div>
             </div>
         </div>
     </main>

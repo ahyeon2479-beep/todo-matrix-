@@ -1,3 +1,8 @@
+/* ── PWA Service Worker ──────────────────────────────── */
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/static/service-worker.js').catch(() => {});
+}
+
 /* ── State ───────────────────────────────────────────── */
 const WD = ['월','화','수','목','금','토','일'];
 const Q_COLORS = {
@@ -36,6 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupModals();
     setupDiary();
     setupFreeMemo();
+    setupSupport();
     showView('matrix');
     autoBackup();
 });
@@ -138,6 +144,10 @@ function showView(name) {
     } else if (name === 'diaryTrash') {
         document.getElementById('diaryTrashView').classList.remove('hidden');
         refreshTrash();
+    } else if (name === 'support') {
+        document.getElementById('supportView').classList.remove('hidden');
+        document.getElementById('btnSupport').classList.add('active');
+        refreshSupport();
     }
 }
 
@@ -1681,4 +1691,191 @@ async function refreshTrash() {
         $list.appendChild(card);
     });
     updateCount();
+}
+
+/* ── 지원사업 모니터링 ──────────────────────────────────── */
+
+let supportPage = 1;
+let supportSearchTimer = null;
+
+function setupSupport() {
+    document.getElementById('supportRefreshBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('supportRefreshBtn');
+        btn.disabled = true;
+        btn.textContent = '스크래핑 중...';
+        try {
+            await api('/api/scrape/run', { method: 'POST' });
+            btn.textContent = '실행됨 (백그라운드)';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.textContent = '업데이트';
+                refreshSupport();
+            }, 30000);
+        } catch (e) {
+            alert('스크래핑 실행 실패: ' + e.message);
+            btn.disabled = false;
+            btn.textContent = '업데이트';
+        }
+    });
+
+    document.getElementById('supportMarkSeenBtn').addEventListener('click', async () => {
+        await api('/api/support/programs/mark-seen', { method: 'POST' });
+        refreshSupport();
+    });
+
+    document.getElementById('supportSiteFilter').addEventListener('change', () => { supportPage = 1; refreshSupport(); });
+    document.getElementById('supportStatusFilter').addEventListener('change', () => { supportPage = 1; refreshSupport(); });
+    document.getElementById('supportSearchInput').addEventListener('input', () => {
+        clearTimeout(supportSearchTimer);
+        supportSearchTimer = setTimeout(() => { supportPage = 1; refreshSupport(); }, 400);
+    });
+}
+
+async function refreshSupport() {
+    const $list = document.getElementById('supportList');
+    $list.innerHTML = '<div class="support-loading">불러오는 중...</div>';
+
+    const site = document.getElementById('supportSiteFilter').value;
+    const filter = document.getElementById('supportStatusFilter').value;
+    const search = document.getElementById('supportSearchInput').value;
+
+    const params = new URLSearchParams({ page: supportPage, per_page: 20 });
+    if (site) params.set('source_site', site);
+    if (filter) params.set('filter', filter);
+    if (search) params.set('search', search);
+
+    try {
+        const [data, stats, logs] = await Promise.all([
+            api(`/api/support/programs?${params}`),
+            api('/api/support/stats'),
+            api('/api/support/logs'),
+        ]);
+
+        renderSupportStats(stats);
+        renderSupportSiteFilter(stats);
+        renderSupportList(data);
+        renderSupportPagination(data);
+        renderSupportLastUpdate(logs);
+    } catch (e) {
+        $list.innerHTML = `<div class="support-empty">데이터를 불러올 수 없습니다. 먼저 "업데이트" 버튼을 눌러 스크래핑을 실행해주세요.</div>`;
+    }
+}
+
+function renderSupportStats(stats) {
+    const $el = document.getElementById('supportStats');
+    $el.innerHTML = `
+        <div class="support-stat-card">
+            <div class="stat-num">${stats.total || 0}</div>
+            <div class="stat-label">전체</div>
+        </div>
+        <div class="support-stat-card new">
+            <div class="stat-num">${stats.new_count || 0}</div>
+            <div class="stat-label">새 항목</div>
+        </div>
+    `;
+}
+
+function renderSupportSiteFilter(stats) {
+    const $sel = document.getElementById('supportSiteFilter');
+    const current = $sel.value;
+    const sites = Object.keys(stats.by_site || {}).sort();
+    // Only rebuild if sites changed
+    const existing = Array.from($sel.options).slice(1).map(o => o.value);
+    if (JSON.stringify(sites) !== JSON.stringify(existing)) {
+        $sel.innerHTML = '<option value="">전체 사이트</option>';
+        sites.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = `${s} (${stats.by_site[s]})`;
+            $sel.appendChild(opt);
+        });
+        $sel.value = current;
+    }
+}
+
+function renderSupportList(data) {
+    const $list = document.getElementById('supportList');
+    const programs = data.programs || [];
+
+    if (programs.length === 0) {
+        $list.innerHTML = '<div class="support-empty">표시할 지원사업이 없습니다.</div>';
+        return;
+    }
+
+    $list.innerHTML = programs.map(p => {
+        const newCls = p.is_new ? ' is-new' : '';
+        const bmCls = p.is_bookmarked ? ' active' : '';
+        const statusCls = p.status && (p.status.includes('진행') || p.status.includes('접수')) ? 'ing' : (p.status && (p.status.includes('마감') || p.status.includes('종료')) ? 'end' : '');
+        const statusHtml = p.status ? `<span class="support-card-status ${statusCls}">${p.status}</span>` : '';
+
+        return `
+        <div class="support-card${newCls}" data-id="${p.id}">
+            <div class="support-card-header">
+                <div>
+                    <span class="support-card-badge">${p.source_site}</span>
+                    ${statusHtml}
+                </div>
+                <button class="support-card-bookmark${bmCls}" data-id="${p.id}" title="북마크">${p.is_bookmarked ? '\u2605' : '\u2606'}</button>
+            </div>
+            <a class="support-card-title" href="${p.source_url}" target="_blank" rel="noopener">${p.title}</a>
+            <div class="support-card-meta">
+                ${p.organization ? `<span>${p.organization}</span>` : ''}
+                ${p.deadline ? `<span>마감: ${p.deadline}</span>` : ''}
+                ${p.category ? `<span>${p.category}</span>` : ''}
+                <span>${p.first_seen ? p.first_seen.split('T')[0] : ''}</span>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Bookmark click handlers
+    $list.querySelectorAll('.support-card-bookmark').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const id = btn.dataset.id;
+            const res = await api(`/api/support/programs/${id}/bookmark`, { method: 'POST' });
+            btn.classList.toggle('active', res.is_bookmarked);
+            btn.textContent = res.is_bookmarked ? '\u2605' : '\u2606';
+        });
+    });
+}
+
+function renderSupportPagination(data) {
+    const $el = document.getElementById('supportPagination');
+    const total = data.total_pages || 1;
+    const current = data.page || 1;
+
+    if (total <= 1) { $el.innerHTML = ''; return; }
+
+    let html = '';
+    if (current > 1) html += `<button data-page="${current - 1}">&laquo;</button>`;
+
+    const start = Math.max(1, current - 3);
+    const end = Math.min(total, current + 3);
+    for (let i = start; i <= end; i++) {
+        html += `<button data-page="${i}" class="${i === current ? 'active' : ''}">${i}</button>`;
+    }
+
+    if (current < total) html += `<button data-page="${current + 1}">&raquo;</button>`;
+    $el.innerHTML = html;
+
+    $el.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            supportPage = parseInt(btn.dataset.page);
+            refreshSupport();
+        });
+    });
+}
+
+function renderSupportLastUpdate(logs) {
+    const $el = document.getElementById('supportLastUpdate');
+    const items = logs.logs || [];
+    if (items.length > 0) {
+        const latest = items[0].scraped_at;
+        if (latest) {
+            const d = new Date(latest);
+            $el.textContent = `마지막 업데이트: ${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        }
+    } else {
+        $el.textContent = '아직 업데이트 없음';
+    }
 }
