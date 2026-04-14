@@ -698,7 +698,6 @@ def _matches_repeat(todo, date_str):
     return False
 
 
-
 # ── 앱 실행 ──────────────────────────────────────────────
 
 with app.app_context():
