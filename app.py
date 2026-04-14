@@ -654,6 +654,29 @@ def delete_free_memo(memo_id):
     return jsonify({"ok": True})
 
 
+# ── 백업 API ─────────────────────────────────────────────
+
+@app.route("/api/backup")
+@login_required
+def backup_data():
+    data = {
+        "exported_at": datetime.now().isoformat(),
+        "user": {"id": current_user.id, "email": current_user.email, "name": current_user.name},
+        "todos": [t.to_dict() for t in Todo.query.filter_by(user_id=current_user.id).all()],
+        "habits": [h.to_dict() for h in Habit.query.filter_by(user_id=current_user.id).all()],
+        "memos": [{"date_str": m.date_str, "text": m.text} for m in Memo.query.filter_by(user_id=current_user.id).all()],
+        "diaries": [d.to_dict() for d in Diary.query.filter_by(user_id=current_user.id).all()],
+        "buckets": [b.to_dict() for b in BucketItem.query.filter_by(user_id=current_user.id).all()],
+        "free_memos": [m.to_dict() for m in FreeMemo.query.filter_by(user_id=current_user.id).all()],
+        "memo_folders": [f.to_dict() for f in MemoFolder.query.filter_by(user_id=current_user.id).all()],
+        "sticky_notes": [n.to_dict() for n in StickyNote.query.filter_by(user_id=current_user.id).all()],
+    }
+    resp = make_response(json.dumps(data, ensure_ascii=False, indent=2))
+    resp.headers['Content-Type'] = 'application/json; charset=utf-8'
+    resp.headers['Content-Disposition'] = f'attachment; filename=todo-matrix-backup-{datetime.now().strftime("%Y%m%d")}.json'
+    return resp
+
+
 # ── 헬퍼 ─────────────────────────────────────────────────
 
 def _matches_repeat(todo, date_str):

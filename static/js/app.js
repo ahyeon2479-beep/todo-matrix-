@@ -83,6 +83,7 @@ function setupHeader() {
     hMenu.querySelector('[data-action="repeatView"]').addEventListener('click', () => { hMenu.classList.add('hidden'); showView('repeat'); });
     hMenu.querySelector('[data-action="habitFullView"]').addEventListener('click', () => { hMenu.classList.add('hidden'); showView('habitFull'); });
     hMenu.querySelector('[data-action="diaryExport"]').addEventListener('click', () => { hMenu.classList.add('hidden'); showView('diaryExport'); });
+    hMenu.querySelector('[data-action="backup"]').addEventListener('click', () => { hMenu.classList.add('hidden'); location.href = '/api/backup'; });
 }
 
 function showView(name) {
