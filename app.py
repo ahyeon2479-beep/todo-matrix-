@@ -9,7 +9,7 @@ from authlib.integrations.flask_client import OAuth
 from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 
-from models_db import db, User, Todo, Memo, Habit, HabitCheck, BucketItem, Diary, FreeMemo, StickyNote, MemoFolder, SupportProgram, ScrapeLog
+from models_db import db, User, Todo, Memo, Habit, HabitCheck, BucketItem, Diary, FreeMemo, StickyNote, MemoFolder
 from holidays_kr import HOLIDAYS_KR
 
 from pathlib import Path
@@ -698,9 +698,6 @@ def _matches_repeat(todo, date_str):
     return False
 
 
-# ── 지원사업 모니터링 Blueprint ─────────────────────────
-from api_support import support_bp
-app.register_blueprint(support_bp)
 
 # ── 앱 실행 ──────────────────────────────────────────────
 
