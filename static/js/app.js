@@ -1603,23 +1603,14 @@ function exportPdf() {
     }
     $pv.innerHTML = html;
     $pv.style.display = 'block';
-    window.print();
-    $pv.style.display = 'none';
+    const cleanup = () => { $pv.style.display = 'none'; window.removeEventListener('afterprint', cleanup); };
+    window.addEventListener('afterprint', cleanup);
+    setTimeout(() => window.print(), 300);
 }
 
-async function exportTxt() {
+function exportTxt() {
     const ids = getSelectedExportIds();
-    const resp = await fetch('/diary/download/txt', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ids})
-    });
-    const blob = await resp.blob();
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'diary.txt';
-    a.click();
-    URL.revokeObjectURL(a.href);
+    location.href = `/diary/download/txt?ids=${ids.join(',')}`;
 }
 
 /* ── Diary Trash ──────────────────────────────────────── */

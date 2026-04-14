@@ -9,7 +9,7 @@ from authlib.integrations.flask_client import OAuth
 from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 
-from models_db import db, User, Todo, Memo, Habit, HabitCheck, BucketItem, Diary, FreeMemo, StickyNote, MemoFolder
+from models_db import db, User, Todo, Memo, Habit, HabitCheck, BucketItem, Diary, FreeMemo, StickyNote, MemoFolder, SupportProgram, ScrapeLog
 from holidays_kr import HOLIDAYS_KR
 
 from pathlib import Path
@@ -526,10 +526,13 @@ def delete_sticky(nid):
 
 # ── Diary Download ────────────────────────────────────────
 
-@app.route("/diary/download/txt", methods=["POST"])
+@app.route("/diary/download/txt", methods=["GET", "POST"])
 @login_required
 def download_diary_txt():
-    ids = request.json.get("ids", [])
+    if request.method == "POST":
+        ids = request.json.get("ids", [])
+    else:
+        ids = [int(x) for x in request.args.get("ids", "").split(",") if x]
     entries = Diary.query.filter(Diary.id.in_(ids), Diary.user_id == current_user.id).order_by(Diary.date_str.asc()).all()
     lines = []
     for e in entries:
@@ -694,6 +697,10 @@ def _matches_repeat(todo, date_str):
         return True
     return False
 
+
+# ── 지원사업 모니터링 Blueprint ─────────────────────────
+from api_support import support_bp
+app.register_blueprint(support_bp)
 
 # ── 앱 실행 ──────────────────────────────────────────────
 
