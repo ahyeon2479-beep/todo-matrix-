@@ -37,7 +37,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupDiary();
     setupFreeMemo();
     showView('matrix');
+    autoBackup();
 });
+
+/* ── Auto Backup ────────────────────────────────────── */
+async function autoBackup() {
+    try {
+        const last = localStorage.getItem('lastBackupTime');
+        const now = Date.now();
+        // 6시간마다 자동 백업
+        if (last && now - parseInt(last) < 6 * 60 * 60 * 1000) return;
+        const res = await fetch('/api/backup');
+        if (!res.ok) return;
+        const data = await res.text();
+        localStorage.setItem('todoMatrixBackup', data);
+        localStorage.setItem('lastBackupTime', String(now));
+        console.log('자동 백업 완료:', new Date().toLocaleString('ko'));
+    } catch (e) {
+        console.log('자동 백업 실패:', e);
+    }
+}
 
 /* ── Helpers ─────────────────────────────────────────── */
 function todayStr() {
