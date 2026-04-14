@@ -374,6 +374,7 @@
                     <span class="tb-sep"></span>
                     <button type="button" class="tb-btn" id="tbImage" title="이미지 추가">&#128247;</button>
                     <button type="button" class="tb-btn" id="tbLink" title="링크 추가">&#128279;</button>
+                    <button type="button" class="tb-btn" id="tbDraw" title="손글씨">✏️</button>
                     <input type="file" id="diaryImageInput" accept="image/*" multiple style="display:none">
                 </div>
                 <div class="de-editor" id="diaryContentInput" contenteditable="true" data-placeholder="오늘 하루를 기록해보세요..."></div>
@@ -425,6 +426,31 @@
     </div>
 
     <!-- ── 모달: 메모 작성 ───────────────────────────── -->
+    <!-- ── 모달: 손글씨 캔버스 ──────────────────────── -->
+    <div class="modal-overlay hidden" id="drawModal">
+        <div class="draw-popup">
+            <div class="draw-toolbar">
+                <button class="draw-tool active" id="drawPen" title="펜">✏️</button>
+                <button class="draw-tool" id="drawEraser" title="지우개">🧹</button>
+                <span class="tb-sep"></span>
+                <input type="color" id="drawColor" value="#000000" title="색상">
+                <select id="drawSize" title="굵기">
+                    <option value="2">가늘게</option>
+                    <option value="4" selected>보통</option>
+                    <option value="8">굵게</option>
+                    <option value="16">매우 굵게</option>
+                </select>
+                <span class="tb-sep"></span>
+                <button class="btn-sm" id="drawClear">전체 지우기</button>
+                <button class="btn-sm" id="drawUndo">↩ 실행취소</button>
+                <span style="flex:1"></span>
+                <button class="btn-sm" id="drawCancel">취소</button>
+                <button class="btn-primary btn-sm" id="drawSave">삽입</button>
+            </div>
+            <canvas id="drawCanvas"></canvas>
+        </div>
+    </div>
+
     <!-- ── 모달: 메모 읽기 ───────────────────────────── -->
     <div class="modal-overlay hidden" id="memoReadModal">
         <div class="diary-read-popup">
@@ -458,6 +484,7 @@
                 <button type="button" class="tb-btn" id="memoTbImage" title="이미지">📷</button>
                 <button type="button" class="tb-btn" id="memoTbLink" title="링크">🔗</button>
                 <button type="button" class="tb-btn" id="memoTbYoutube" title="유튜브">▶</button>
+                <button type="button" class="tb-btn" id="memoTbDraw" title="손글씨">✏️</button>
                 <input type="file" id="memoImageInput" accept="image/*" multiple style="display:none">
             </div>
             <div class="memo-editor-body" id="memoContentInput" contenteditable="true" data-placeholder="자유롭게 메모하세요..."></div>

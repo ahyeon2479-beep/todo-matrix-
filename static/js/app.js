@@ -64,6 +64,117 @@ async function autoBackup() {
     }
 }
 
+/* ── Drawing Canvas ──────────────────────────────────── */
+let drawTarget = null; // 'diary' or 'memo'
+let drawCtx = null;
+let drawing = false;
+let drawHistory = [];
+let drawMode = 'pen'; // 'pen' or 'eraser'
+
+function openDrawModal(target) {
+    drawTarget = target;
+    const $m = document.getElementById('drawModal');
+    const canvas = document.getElementById('drawCanvas');
+    const popup = document.querySelector('.draw-popup');
+    canvas.width = Math.min(window.innerWidth - 40, 800);
+    canvas.height = Math.min(window.innerHeight - 120, 500);
+    drawCtx = canvas.getContext('2d');
+    drawCtx.fillStyle = '#fff';
+    drawCtx.fillRect(0, 0, canvas.width, canvas.height);
+    drawCtx.lineCap = 'round';
+    drawCtx.lineJoin = 'round';
+    drawHistory = [];
+    saveDrawState();
+    drawMode = 'pen';
+    document.getElementById('drawPen').classList.add('active');
+    document.getElementById('drawEraser').classList.remove('active');
+    $m.classList.remove('hidden');
+}
+
+function saveDrawState() {
+    drawHistory.push(drawCtx.getImageData(0, 0, drawCtx.canvas.width, drawCtx.canvas.height));
+    if (drawHistory.length > 30) drawHistory.shift();
+}
+
+function getDrawPos(e) {
+    const rect = drawCtx.canvas.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+}
+
+(function setupDraw() {
+    const canvas = document.getElementById('drawCanvas');
+    if (!canvas) return;
+
+    function startDraw(e) {
+        e.preventDefault();
+        drawing = true;
+        const pos = getDrawPos(e);
+        drawCtx.beginPath();
+        drawCtx.moveTo(pos.x, pos.y);
+    }
+    function moveDraw(e) {
+        if (!drawing) return;
+        e.preventDefault();
+        const pos = getDrawPos(e);
+        drawCtx.strokeStyle = drawMode === 'eraser' ? '#ffffff' : document.getElementById('drawColor').value;
+        drawCtx.lineWidth = drawMode === 'eraser' ? 20 : parseInt(document.getElementById('drawSize').value);
+        drawCtx.lineTo(pos.x, pos.y);
+        drawCtx.stroke();
+    }
+    function endDraw(e) {
+        if (!drawing) return;
+        drawing = false;
+        saveDrawState();
+    }
+
+    canvas.addEventListener('pointerdown', startDraw);
+    canvas.addEventListener('pointermove', moveDraw);
+    canvas.addEventListener('pointerup', endDraw);
+    canvas.addEventListener('pointerleave', endDraw);
+    canvas.style.touchAction = 'none';
+
+    document.getElementById('drawPen').addEventListener('click', () => {
+        drawMode = 'pen';
+        document.getElementById('drawPen').classList.add('active');
+        document.getElementById('drawEraser').classList.remove('active');
+    });
+    document.getElementById('drawEraser').addEventListener('click', () => {
+        drawMode = 'eraser';
+        document.getElementById('drawEraser').classList.add('active');
+        document.getElementById('drawPen').classList.remove('active');
+    });
+    document.getElementById('drawClear').addEventListener('click', () => {
+        drawCtx.fillStyle = '#fff';
+        drawCtx.fillRect(0, 0, drawCtx.canvas.width, drawCtx.canvas.height);
+        saveDrawState();
+    });
+    document.getElementById('drawUndo').addEventListener('click', () => {
+        if (drawHistory.length > 1) {
+            drawHistory.pop();
+            drawCtx.putImageData(drawHistory[drawHistory.length - 1], 0, 0);
+        }
+    });
+    document.getElementById('drawCancel').addEventListener('click', () => {
+        document.getElementById('drawModal').classList.add('hidden');
+    });
+    document.getElementById('drawSave').addEventListener('click', () => {
+        const dataUrl = drawCtx.canvas.toDataURL('image/png');
+        const targetEl = drawTarget === 'memo' ? 'memoContentInput' : 'diaryContentInput';
+        document.getElementById(targetEl).focus();
+        document.execCommand('insertHTML', false, `<img src="${dataUrl}" style="max-width:100%;border-radius:8px;margin:8px 0;cursor:pointer" onclick="resizeDiaryImg(this)">`);
+        document.getElementById('drawModal').classList.add('hidden');
+    });
+    document.getElementById('drawModal').addEventListener('click', (e) => {
+        if (e.target.id === 'drawModal') document.getElementById('drawModal').classList.add('hidden');
+    });
+})();
+
+// 일기 에디터 손글씨 버튼
+document.getElementById('tbDraw')?.addEventListener('click', () => openDrawModal('diary'));
+// 메모 에디터 손글씨 버튼
+document.getElementById('memoTbDraw')?.addEventListener('click', () => openDrawModal('memo'));
+
 /* ── Helpers ─────────────────────────────────────────── */
 function todayStr() {
     const d = new Date();
