@@ -1590,13 +1590,21 @@ function exportPdf() {
     const selected = exportEntries.filter(e => ids.includes(e.id));
     let html = '<h1 style="text-align:center;color:#1A73E8;margin-bottom:30px">일기장</h1>';
     selected.forEach(e => {
+        const contentHtml = (e.content || '').includes('<') ? e.content : esc(e.content || '');
         const eventHtml = e.event ? `<div style="margin:10px 0;padding:10px;background:#f8f9fa;border-radius:6px;font-size:13px;color:#666"><span style="font-size:11px;color:#1A73E8;font-weight:bold;margin-right:6px">이벤트</span>${esc(e.event).replace(/\n/g, '<br>')}</div>` : '';
-        html += `<div style="margin-bottom:36px;page-break-inside:avoid"><div style="border-bottom:2px solid #1A73E8;padding-bottom:8px;margin-bottom:12px"><div style="font-size:12px;color:#999">${e.date_str}</div><div style="font-size:18px;font-weight:bold;margin-top:4px">${esc(e.title || '무제')} ${e.mood || ''}</div></div>${eventHtml}<div style="font-size:14px;line-height:1.9;white-space:pre-wrap;word-break:break-word">${esc(e.content || '')}</div></div>`;
+        html += `<div style="margin-bottom:36px;page-break-inside:avoid"><div style="border-bottom:2px solid #1A73E8;padding-bottom:8px;margin-bottom:12px"><div style="font-size:12px;color:#999">${e.date_str}</div><div style="font-size:18px;font-weight:bold;margin-top:4px">${esc(e.title || '무제')} ${e.mood || ''}</div></div>${eventHtml}<div style="font-size:14px;line-height:1.9;word-break:break-word">${contentHtml}</div></div>`;
     });
-    const w = window.open('', '_blank');
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>일기장</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:40px;max-width:800px;margin:0 auto;color:#333}</style></head><body>${html}</body></html>`);
-    w.document.close();
-    w.print();
+    // 인쇄 전용 영역에 넣고 현재 페이지에서 인쇄
+    let $pv = document.getElementById('printArea');
+    if (!$pv) {
+        $pv = document.createElement('div');
+        $pv.id = 'printArea';
+        document.body.appendChild($pv);
+    }
+    $pv.innerHTML = html;
+    $pv.style.display = 'block';
+    window.print();
+    $pv.style.display = 'none';
 }
 
 async function exportTxt() {
