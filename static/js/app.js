@@ -1914,6 +1914,11 @@ function setupFinance() {
     // 대출 모달
     document.getElementById('loanAddBtn').addEventListener('click', () => openLoanModal());
     document.getElementById('loanCancel').addEventListener('click', () => document.getElementById('loanModal').classList.add('hidden'));
+    // 잔액/금리/상환방식/만기일 변경 시 월 이자 자동계산
+    ['loanRemaining', 'loanRate', 'loanRepayType', 'loanDueDate'].forEach(id => {
+        document.getElementById(id).addEventListener('change', calcLoanInterest);
+        document.getElementById(id).addEventListener('input', calcLoanInterest);
+    });
     document.getElementById('loanSave').addEventListener('click', async () => {
         const data = {
             name: document.getElementById('loanName').value.trim(),
@@ -1933,6 +1938,41 @@ function setupFinance() {
         document.getElementById('loanModal').classList.add('hidden');
         refreshFinance();
     });
+}
+
+function calcLoanInterest() {
+    const balance = parseInt(document.getElementById('loanRemaining').value) || 0;
+    const rate = parseFloat(document.getElementById('loanRate').value) || 0;
+    const type = document.getElementById('loanRepayType').value;
+    const dueDate = document.getElementById('loanDueDate').value;
+    const $interest = document.getElementById('loanMonthlyInterest');
+    const $label = document.getElementById('loanCalcLabel');
+
+    if (!balance || !rate) { $label.textContent = ''; return; }
+
+    const monthlyRate = rate / 100 / 12;
+
+    if (type === '만기일시' || type === '자유상환') {
+        const interest = Math.round(balance * monthlyRate);
+        $interest.value = interest;
+        $label.textContent = `(자동계산: ${interest.toLocaleString()}원)`;
+    } else if (type === '원리금균등' && dueDate) {
+        const months = Math.max(1, monthsBetween(todayStr(), dueDate));
+        const mp = balance * monthlyRate * Math.pow(1 + monthlyRate, months) / (Math.pow(1 + monthlyRate, months) - 1);
+        const firstInterest = Math.round(balance * monthlyRate);
+        $interest.value = firstInterest;
+        $label.textContent = `(첫달 이자 ${firstInterest.toLocaleString()}원 / 월 납부 ${Math.round(mp).toLocaleString()}원)`;
+    } else if (type === '원금균등' && dueDate) {
+        const months = Math.max(1, monthsBetween(todayStr(), dueDate));
+        const firstInterest = Math.round(balance * monthlyRate);
+        const monthlyPrincipal = Math.round(balance / months);
+        $interest.value = firstInterest;
+        $label.textContent = `(첫달 이자 ${firstInterest.toLocaleString()}원 / 원금 ${monthlyPrincipal.toLocaleString()}원)`;
+    } else {
+        const interest = Math.round(balance * monthlyRate);
+        $interest.value = interest;
+        $label.textContent = `(자동계산: ${interest.toLocaleString()}원)`;
+    }
 }
 
 function openFixedModal(item = null) {
