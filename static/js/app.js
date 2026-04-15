@@ -1881,7 +1881,7 @@ function setupFinance() {
             document.querySelectorAll('.fin-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             document.querySelectorAll('.fin-view').forEach(v => v.classList.add('hidden'));
-            document.getElementById({dashboard:'finDashboard',calendar:'finCalendar',fixed:'finFixed',loans:'finLoans'}[finTab]).classList.remove('hidden');
+            document.getElementById({dashboard:'finDashboard',calendar:'finCalendar',fixed:'finFixed'}[finTab] || 'finDashboard').classList.remove('hidden');
             refreshFinance();
         });
     });
@@ -2042,8 +2042,7 @@ async function refreshFinance() {
     document.getElementById('finTitle').textContent = `${finYear}년 ${finMonth}월`;
     if (finTab === 'dashboard') await renderFinDashboard();
     else if (finTab === 'calendar') await renderFinCalendar();
-    else if (finTab === 'fixed') await renderFinFixed();
-    else if (finTab === 'loans') await renderFinLoans();
+    else if (finTab === 'fixed') { await renderFinFixed(); await renderFinLoans(); }
 }
 
 async function renderFinDashboard() {

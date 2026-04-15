@@ -308,8 +308,7 @@
                     <div class="fin-tabs">
                         <button class="fin-tab active" data-ftab="dashboard">대시보드</button>
                         <button class="fin-tab" data-ftab="calendar">캘린더</button>
-                        <button class="fin-tab" data-ftab="fixed">고정비</button>
-                        <button class="fin-tab" data-ftab="loans">대출</button>
+                        <button class="fin-tab" data-ftab="fixed">고정비·대출</button>
                     </div>
                     <button class="btn-primary" id="finAddBtn">+ 등록</button>
                 </div>
@@ -324,16 +323,14 @@
                 <div class="fin-view hidden" id="finCalendar">
                     <div class="fin-cal-grid" id="finCalGrid"></div>
                 </div>
-                <!-- 고정비 -->
+                <!-- 고정비 + 대출 -->
                 <div class="fin-view hidden" id="finFixed">
                     <div class="fin-fixed-header">
                         <h3>월 고정비</h3>
                         <button class="btn-sm" id="fixedAddBtn">+ 추가</button>
                     </div>
                     <div id="finFixedList"></div>
-                </div>
-                <!-- 대출 -->
-                <div class="fin-view hidden" id="finLoans">
+                    <hr style="margin:20px 0;border:none;border-top:1px solid #e0e0e0">
                     <div class="fin-fixed-header">
                         <h3>대출 관리</h3>
                         <button class="btn-sm" id="loanAddBtn">+ 추가</button>
