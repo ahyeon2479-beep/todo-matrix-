@@ -2232,11 +2232,20 @@ async function renderFinLoans() {
         // 상환 시뮬레이션 계산
         let scheduleHtml = '';
         if (item.remaining_amount > 0 && item.interest_rate > 0) {
-            const r = item.interest_rate / 100 / 12; // 월 이자율
+            const r = item.interest_rate / 100 / 12;
             let balance = item.remaining_amount;
             let rows = '';
             const maxMonths = item.due_date ? Math.max(1, monthsBetween(todayStr(), item.due_date)) : 12;
-            const showMonths = Math.min(maxMonths, 24); // 최대 24개월 표시
+            const showMonths = Math.min(maxMonths, 24);
+            const payD = item.pay_day || 1;
+            const now = new Date();
+            const startY = now.getFullYear();
+            const startM = now.getMonth(); // 0-based
+
+            function getPayDate(idx) {
+                const d = new Date(startY, startM + idx, 1);
+                return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(payD).padStart(2,'0')}`;
+            }
 
             if (item.repay_type === '원리금균등' && maxMonths > 0) {
                 const mp = balance * r * Math.pow(1+r, maxMonths) / (Math.pow(1+r, maxMonths) - 1);
@@ -2244,7 +2253,7 @@ async function renderFinLoans() {
                     const interest = Math.round(balance * r);
                     const principal = Math.round(mp - interest);
                     balance = Math.max(0, balance - principal);
-                    rows += `<tr><td>${i}개월</td><td>${Math.round(mp).toLocaleString()}</td><td>${principal.toLocaleString()}</td><td>${interest.toLocaleString()}</td><td>${balance.toLocaleString()}</td></tr>`;
+                    rows += `<tr><td>${getPayDate(i)}</td><td>${Math.round(mp).toLocaleString()}</td><td>${principal.toLocaleString()}</td><td>${interest.toLocaleString()}</td><td>${balance.toLocaleString()}</td></tr>`;
                 }
             } else if (item.repay_type === '원금균등' && maxMonths > 0) {
                 const monthlyPrincipal = Math.round(item.remaining_amount / maxMonths);
@@ -2252,12 +2261,12 @@ async function renderFinLoans() {
                     const interest = Math.round(balance * r);
                     const total = monthlyPrincipal + interest;
                     balance = Math.max(0, balance - monthlyPrincipal);
-                    rows += `<tr><td>${i}개월</td><td>${total.toLocaleString()}</td><td>${monthlyPrincipal.toLocaleString()}</td><td>${interest.toLocaleString()}</td><td>${balance.toLocaleString()}</td></tr>`;
+                    rows += `<tr><td>${getPayDate(i)}</td><td>${total.toLocaleString()}</td><td>${monthlyPrincipal.toLocaleString()}</td><td>${interest.toLocaleString()}</td><td>${balance.toLocaleString()}</td></tr>`;
                 }
             } else if (item.repay_type === '만기일시') {
                 const interest = Math.round(balance * r);
                 for (let i = 1; i <= showMonths; i++) {
-                    rows += `<tr><td>${i}개월</td><td>${interest.toLocaleString()}</td><td>0</td><td>${interest.toLocaleString()}</td><td>${balance.toLocaleString()}</td></tr>`;
+                    rows += `<tr><td>${getPayDate(i)}</td><td>${interest.toLocaleString()}</td><td>0</td><td>${interest.toLocaleString()}</td><td>${balance.toLocaleString()}</td></tr>`;
                 }
             }
             if (rows) {
