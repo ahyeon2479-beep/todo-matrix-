@@ -1295,6 +1295,14 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
 .fin-f-del { background: none; border: none; cursor: pointer; color: #ccc; }
 .fin-f-del:hover { color: #e55; }
 
+/* 계좌별 합계 */
+.fin-account-total { font-size: 14px; color: #333; margin-bottom: 10px; padding: 10px; background: #e8f5e9; border-radius: 8px; }
+.fin-account-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.fin-acc-name { min-width: 100px; color: #555; font-weight: bold; }
+.fin-acc-bar { flex: 1; height: 16px; background: #f0f0f0; border-radius: 8px; overflow: hidden; }
+.fin-acc-bar div { height: 100%; background: #1A73E8; border-radius: 8px; }
+.fin-acc-val { min-width: 90px; text-align: right; color: #e55; font-weight: bold; }
+
 /* 대출 */
 .fin-loan-card { background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 14px; margin-bottom: 8px; }
 .fin-l-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }

@@ -2080,7 +2080,7 @@ async function refreshFinance() {
     document.getElementById('finTitle').textContent = `${finYear}년 ${finMonth}월`;
     if (finTab === 'dashboard') await renderFinDashboard();
     else if (finTab === 'calendar') await renderFinCalendar();
-    else if (finTab === 'fixed') { await renderFinFixed(); await renderFinLoans(); }
+    else if (finTab === 'fixed') { await renderFinFixed(); await renderFinLoans(); renderAccountSummary(); }
 }
 
 async function renderFinDashboard() {
@@ -2240,6 +2240,38 @@ function openFinDayModal(ds, day, month, dayData, tags, allRecords) {
     document.getElementById('finDayClose').onclick = () => $m.classList.add('hidden');
     $m.addEventListener('click', (e) => { if (e.target === $m) $m.classList.add('hidden'); });
     $m.classList.remove('hidden');
+}
+
+async function renderAccountSummary() {
+    const [fixedItems, loans] = await Promise.all([api('/api/finance/fixed'), api('/api/finance/loans')]);
+    const byAccount = {};
+    // 고정비
+    fixedItems.filter(f => f.is_active && f.pay_method).forEach(f => {
+        byAccount[f.pay_method] = (byAccount[f.pay_method] || 0) + f.amount;
+    });
+    // 대출 (월 이자 or 상환금)
+    loans.filter(l => l.account).forEach(l => {
+        let payment = l.monthly_interest || 0;
+        if (!payment && l.remaining_amount && l.interest_rate) {
+            payment = Math.round(l.remaining_amount * l.interest_rate / 100 / 12);
+        }
+        byAccount[l.account] = (byAccount[l.account] || 0) + payment;
+    });
+    const $el = document.getElementById('finAccountSummary');
+    const entries = Object.entries(byAccount).sort((a, b) => b[1] - a[1]);
+    if (!entries.length) { $el.innerHTML = ''; return; }
+    const grandTotal = entries.reduce((s, [, v]) => s + v, 0);
+    let html = `<h3 style="font-size:14px;margin-bottom:10px">💳 계좌별 월 출금 합계</h3>`;
+    html += `<div class="fin-account-total">총 합계: <strong>${grandTotal.toLocaleString()}원</strong>/월</div>`;
+    entries.forEach(([account, amount]) => {
+        const pct = grandTotal > 0 ? Math.round(amount / grandTotal * 100) : 0;
+        html += `<div class="fin-account-row">
+            <span class="fin-acc-name">${esc(account)}</span>
+            <div class="fin-acc-bar"><div style="width:${pct}%"></div></div>
+            <span class="fin-acc-val">${amount.toLocaleString()}원</span>
+        </div>`;
+    });
+    $el.innerHTML = html;
 }
 
 async function renderFinFixed() {
