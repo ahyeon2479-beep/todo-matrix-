@@ -1294,6 +1294,14 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
 .fin-l-sub { font-size: 12px; color: #888; margin-bottom: 6px; }
 .fin-l-fee { font-size: 11px; color: #e55; margin-top: 6px; padding: 6px 8px; background: #fff5f5; border-radius: 4px; }
 .fin-l-pct { font-size: 12px; color: #1A73E8; font-weight: bold; margin-top: 4px; }
+.fin-l-schedule { margin-top: 10px; }
+.fin-l-schedule-toggle { font-size: 12px; color: #1A73E8; cursor: pointer; padding: 4px 0; }
+.fin-l-schedule-toggle:hover { text-decoration: underline; }
+.fin-l-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 11px; }
+.fin-l-table th { background: #f8f9fa; padding: 6px 4px; text-align: right; font-weight: bold; color: #666; border-bottom: 2px solid #e0e0e0; }
+.fin-l-table td { padding: 5px 4px; text-align: right; border-bottom: 1px solid #f0f0f0; }
+.fin-l-table tr:hover { background: #f8f9fa; }
+.fin-l-table th:first-child, .fin-l-table td:first-child { text-align: center; }
 
 /* 거래 등록 모달 */
 .fin-type-btns { display: flex; gap: 4px; margin-bottom: 10px; }

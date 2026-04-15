@@ -176,6 +176,11 @@ document.getElementById('tbDraw')?.addEventListener('click', () => openDrawModal
 document.getElementById('memoTbDraw')?.addEventListener('click', () => openDrawModal('memo'));
 
 /* ── Helpers ─────────────────────────────────────────── */
+function monthsBetween(a, b) {
+    const [ay, am] = a.split('-').map(Number);
+    const [by, bm] = b.split('-').map(Number);
+    return (by - ay) * 12 + (bm - am);
+}
 function todayStr() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -2094,6 +2099,41 @@ async function renderFinLoans() {
     items.forEach(item => {
         const div = document.createElement('div');
         div.className = 'fin-loan-card';
+        // 상환 시뮬레이션 계산
+        let scheduleHtml = '';
+        if (item.remaining_amount > 0 && item.interest_rate > 0) {
+            const r = item.interest_rate / 100 / 12; // 월 이자율
+            let balance = item.remaining_amount;
+            let rows = '';
+            const maxMonths = item.due_date ? Math.max(1, monthsBetween(todayStr(), item.due_date)) : 12;
+            const showMonths = Math.min(maxMonths, 24); // 최대 24개월 표시
+
+            if (item.repay_type === '원리금균등' && maxMonths > 0) {
+                const mp = balance * r * Math.pow(1+r, maxMonths) / (Math.pow(1+r, maxMonths) - 1);
+                for (let i = 1; i <= showMonths; i++) {
+                    const interest = Math.round(balance * r);
+                    const principal = Math.round(mp - interest);
+                    balance = Math.max(0, balance - principal);
+                    rows += `<tr><td>${i}개월</td><td>${Math.round(mp).toLocaleString()}</td><td>${principal.toLocaleString()}</td><td>${interest.toLocaleString()}</td><td>${balance.toLocaleString()}</td></tr>`;
+                }
+            } else if (item.repay_type === '원금균등' && maxMonths > 0) {
+                const monthlyPrincipal = Math.round(item.remaining_amount / maxMonths);
+                for (let i = 1; i <= showMonths; i++) {
+                    const interest = Math.round(balance * r);
+                    const total = monthlyPrincipal + interest;
+                    balance = Math.max(0, balance - monthlyPrincipal);
+                    rows += `<tr><td>${i}개월</td><td>${total.toLocaleString()}</td><td>${monthlyPrincipal.toLocaleString()}</td><td>${interest.toLocaleString()}</td><td>${balance.toLocaleString()}</td></tr>`;
+                }
+            } else if (item.repay_type === '만기일시') {
+                const interest = Math.round(balance * r);
+                for (let i = 1; i <= showMonths; i++) {
+                    rows += `<tr><td>${i}개월</td><td>${interest.toLocaleString()}</td><td>0</td><td>${interest.toLocaleString()}</td><td>${balance.toLocaleString()}</td></tr>`;
+                }
+            }
+            if (rows) {
+                scheduleHtml = `<div class="fin-l-schedule"><div class="fin-l-schedule-toggle">▼ 상환 스케줄</div><table class="fin-l-table hidden"><tr><th>회차</th><th>납부액</th><th>원금</th><th>이자</th><th>잔액</th></tr>${rows}</table></div>`;
+            }
+        }
         div.innerHTML = `
             <div class="fin-l-header"><span class="fin-l-name">${esc(item.name)}</span><button class="fin-l-del">&times;</button></div>
             ${item.bank ? `<div class="fin-l-sub">${esc(item.bank)}</div>` : ''}
@@ -2106,7 +2146,18 @@ async function renderFinLoans() {
                 ${item.account ? `<span>계좌: ${esc(item.account)}</span>` : ''}
             </div>
             ${item.prepay_fee ? `<div class="fin-l-fee">중도상환: ${esc(item.prepay_fee)}</div>` : ''}
+            ${scheduleHtml}
         `;
+        // 스케줄 토글
+        const toggle = div.querySelector('.fin-l-schedule-toggle');
+        if (toggle) {
+            toggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const table = div.querySelector('.fin-l-table');
+                table.classList.toggle('hidden');
+                toggle.textContent = table.classList.contains('hidden') ? '▼ 상환 스케줄' : '▲ 상환 스케줄 접기';
+            });
+        }
         div.querySelector('.fin-l-del').addEventListener('click', async (e) => {
             e.stopPropagation();
             if (confirm(`'${item.name}' 삭제?`)) { await api(`/api/finance/loans/${item.id}`, {method:'DELETE'}); refreshFinance(); }
