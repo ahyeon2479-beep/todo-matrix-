@@ -345,6 +345,21 @@
 
     </main>
 
+    <!-- ── 모달: 캘린더 날짜 상세 ─────────────────────── -->
+    <div class="modal-overlay hidden" id="finDayModal">
+        <div class="modal" style="max-width:440px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <h3 id="finDayTitle" style="margin:0"></h3>
+                <button class="btn-primary btn-sm" id="finDayAddBtn">+ 등록</button>
+            </div>
+            <div id="finDayFixed"></div>
+            <div id="finDayRecords"></div>
+            <div style="text-align:right;margin-top:12px">
+                <button class="btn-cancel" id="finDayClose">닫기</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ── 모달: 거래 등록 ────────────────────────────── -->
     <div class="modal-overlay hidden" id="finModal">
         <div class="modal">

@@ -2128,9 +2128,42 @@ async function renderFinCalendar() {
             if (d <= new Date()) inner += `<div class="fin-cal-nospend">✓</div>`;
         }
         cell.innerHTML = inner;
-        cell.addEventListener('click', () => openFinModal({date_str: ds}));
+        cell.addEventListener('click', () => openFinDayModal(ds, day, mo, byDate[ds], payDays[day], records));
         $grid.appendChild(cell);
     });
+}
+
+function openFinDayModal(ds, day, month, dayData, tags, allRecords) {
+    const $m = document.getElementById('finDayModal');
+    document.getElementById('finDayTitle').textContent = ds;
+
+    // 대출/고정비 표시
+    const $fixed = document.getElementById('finDayFixed');
+    if (tags && tags.length) {
+        $fixed.innerHTML = '<div style="font-size:12px;color:#888;margin-bottom:4px">이 날 결제</div>' +
+            tags.map(t => `<div class="fin-day-tag">${esc(t)}</div>`).join('');
+    } else {
+        $fixed.innerHTML = '';
+    }
+
+    // 해당 날짜 거래 내역
+    const $records = document.getElementById('finDayRecords');
+    const dayRecords = allRecords.filter(r => r.date_str === ds);
+    if (dayRecords.length) {
+        $records.innerHTML = '<div style="font-size:12px;color:#888;margin:8px 0 4px">거래 내역</div>';
+        dayRecords.forEach(r => {
+            const color = r.record_type === 'income' ? '#1A73E8' : '#e55';
+            const sign = r.record_type === 'income' ? '+' : '-';
+            $records.innerHTML += `<div class="fin-day-record"><span class="fin-day-cat">${esc(r.category)}</span><span style="color:${color};font-weight:bold">${sign}${r.amount.toLocaleString()}원</span><span style="color:#999;font-size:11px">${esc(r.description)}</span></div>`;
+        });
+    } else {
+        $records.innerHTML = '<div style="color:#999;padding:16px;text-align:center;font-size:13px">거래 내역이 없습니다</div>';
+    }
+
+    document.getElementById('finDayAddBtn').onclick = () => { $m.classList.add('hidden'); openFinModal({date_str: ds}); };
+    document.getElementById('finDayClose').onclick = () => $m.classList.add('hidden');
+    $m.addEventListener('click', (e) => { if (e.target === $m) $m.classList.add('hidden'); });
+    $m.classList.remove('hidden');
 }
 
 async function renderFinFixed() {
