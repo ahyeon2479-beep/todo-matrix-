@@ -748,43 +748,33 @@ async function refreshHabitFull() {
         }
     }
 
-    // Chips (드래그로 순서 변경)
+    // Chips (순서 변경: ◀▶ 버튼 + 드래그)
     const $chips = document.getElementById('habitChips');
     $chips.innerHTML = '';
-    habits.forEach(h => {
+    habits.forEach((h, idx) => {
         const chip = document.createElement('span');
         chip.className = 'habit-chip';
-        chip.draggable = true;
         chip.dataset.habitId = h.id;
-        chip.innerHTML = `${esc(h.name)} <button data-hid="${h.id}">&times;</button>`;
-        chip.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', h.id);
-            chip.style.opacity = '0.4';
-        });
-        chip.addEventListener('dragend', () => { chip.style.opacity = '1'; });
-        chip.addEventListener('dragover', (e) => { e.preventDefault(); chip.classList.add('drag-over'); });
-        chip.addEventListener('dragleave', () => chip.classList.remove('drag-over'));
-        chip.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            chip.classList.remove('drag-over');
-            const draggedId = parseInt(e.dataTransfer.getData('text/plain'));
-            if (!draggedId || draggedId === h.id) return;
-            // 순서 재배열
-            const allChips = [...$chips.querySelectorAll('.habit-chip')];
-            const ids = allChips.map(c => parseInt(c.dataset.habitId));
-            const fromIdx = ids.indexOf(draggedId);
-            const toIdx = ids.indexOf(h.id);
-            if (fromIdx === -1 || toIdx === -1) return;
-            ids.splice(fromIdx, 1);
-            ids.splice(toIdx, 0, draggedId);
-            try {
+        const leftBtn = idx > 0 ? `<button class="habit-move" data-dir="left" title="왼쪽으로">◀</button>` : '';
+        const rightBtn = idx < habits.length - 1 ? `<button class="habit-move" data-dir="right" title="오른쪽으로">▶</button>` : '';
+        chip.innerHTML = `${leftBtn} ${esc(h.name)} ${rightBtn} <button class="habit-del" data-hid="${h.id}">&times;</button>`;
+        // 좌우 이동 버튼
+        chip.querySelectorAll('.habit-move').forEach(btn => {
+            btn.addEventListener('click', async (ev) => {
+                ev.stopPropagation();
+                const ids = habits.map(x => x.id);
+                const dir = btn.dataset.dir;
+                if (dir === 'left' && idx > 0) {
+                    [ids[idx - 1], ids[idx]] = [ids[idx], ids[idx - 1]];
+                } else if (dir === 'right' && idx < ids.length - 1) {
+                    [ids[idx], ids[idx + 1]] = [ids[idx + 1], ids[idx]];
+                }
                 await api('/api/habits/reorder', {method:'POST', body:JSON.stringify({ids})});
-            } catch (err) {
-                alert('순서 변경 실패: ' + err.message);
-            }
-            refreshHabitFull();
+                refreshHabitFull();
+            });
         });
-        chip.querySelector('button').addEventListener('click', async (ev) => {
+        // 삭제 버튼
+        chip.querySelector('.habit-del').addEventListener('click', async (ev) => {
             ev.stopPropagation();
             if (!confirm(`'${h.name}' 습관을 삭제할까요?`)) return;
             await api(`/api/habits/${h.id}`, {method:'DELETE'});
