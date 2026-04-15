@@ -2094,11 +2094,10 @@ async function renderFinCalendar() {
         if (r.record_type === 'income') byDate[r.date_str].income += r.amount;
         else byDate[r.date_str].expense += r.amount;
     });
-    // 대출 상환일 표시
+    // 대출/고정비 상환일 정보
     const payDays = {};
-    loans.forEach(l => { if (l.pay_day) payDays[l.pay_day] = (payDays[l.pay_day] || []).concat(l.name); });
-    // 고정비 결제일 표시
-    fixedItems.forEach(f => { if (f.day_of_month && f.is_active) payDays[f.day_of_month] = (payDays[f.day_of_month] || []).concat(f.name); });
+    loans.forEach(l => { if (l.pay_day) { if (!payDays[l.pay_day]) payDays[l.pay_day] = []; payDays[l.pay_day].push({type:'loan', name:l.name, amount:l.monthly_interest, account:l.account, bank:l.bank, repay_type:l.repay_type}); }});
+    fixedItems.forEach(f => { if (f.day_of_month && f.is_active) { if (!payDays[f.day_of_month]) payDays[f.day_of_month] = []; payDays[f.day_of_month].push({type:'fixed', name:f.name, amount:f.amount, category:f.category}); }});
 
     const $grid = document.getElementById('finCalGrid');
     $grid.innerHTML = '';
@@ -2116,8 +2115,9 @@ async function renderFinCalendar() {
         let inner = `<div class="fin-cal-day">${day}</div>`;
         // 대출/고정비 상환일 태그
         if (!ov && mo === finMonth && payDays[day]) {
-            payDays[day].forEach(name => {
-                inner += `<div class="fin-cal-tag">${esc(name.length > 5 ? name.slice(0,5)+'…' : name)}</div>`;
+            payDays[day].forEach(p => {
+                const n = p.name.length > 5 ? p.name.slice(0,5)+'…' : p.name;
+                inner += `<div class="fin-cal-tag">${esc(n)}</div>`;
             });
         }
         if (data) {
@@ -2137,11 +2137,32 @@ function openFinDayModal(ds, day, month, dayData, tags, allRecords) {
     const $m = document.getElementById('finDayModal');
     document.getElementById('finDayTitle').textContent = ds;
 
-    // 대출/고정비 표시
+    // 대출/고정비 상세 표시
     const $fixed = document.getElementById('finDayFixed');
     if (tags && tags.length) {
-        $fixed.innerHTML = '<div style="font-size:12px;color:#888;margin-bottom:4px">이 날 결제</div>' +
-            tags.map(t => `<div class="fin-day-tag">${esc(t)}</div>`).join('');
+        let html = '<div style="font-size:12px;color:#888;margin-bottom:6px">이 날 결제</div>';
+        tags.forEach(p => {
+            if (p.type === 'loan') {
+                html += `<div class="fin-day-card loan">
+                    <div class="fin-day-card-title">🏦 ${esc(p.name)}</div>
+                    <div class="fin-day-card-info">
+                        ${p.amount ? `<span>월 이자: <strong>${p.amount.toLocaleString()}원</strong></span>` : ''}
+                        ${p.repay_type ? `<span>상환: ${esc(p.repay_type)}</span>` : ''}
+                        ${p.bank ? `<span>금융기관: ${esc(p.bank)}</span>` : ''}
+                        ${p.account ? `<span>계좌: ${esc(p.account)}</span>` : ''}
+                    </div>
+                </div>`;
+            } else {
+                html += `<div class="fin-day-card fixed">
+                    <div class="fin-day-card-title">📋 ${esc(p.name)}</div>
+                    <div class="fin-day-card-info">
+                        <span>금액: <strong>${p.amount.toLocaleString()}원</strong></span>
+                        ${p.category ? `<span>분류: ${esc(p.category)}</span>` : ''}
+                    </div>
+                </div>`;
+            }
+        });
+        $fixed.innerHTML = html;
     } else {
         $fixed.innerHTML = '';
     }
