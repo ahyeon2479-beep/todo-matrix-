@@ -1932,6 +1932,10 @@ function setupFinance() {
             account: document.getElementById('loanAccount').value.trim(),
         };
         if (!data.name) { alert('대출명을 입력해주세요'); return; }
+        // 월 이자 미입력 시 자동계산
+        if (!data.monthly_interest && data.remaining_amount && data.interest_rate) {
+            data.monthly_interest = Math.round(data.remaining_amount * data.interest_rate / 100 / 12);
+        }
         const editId = document.getElementById('loanEditId').value;
         if (editId) await api(`/api/finance/loans/${editId}`, {method:'PUT', body:JSON.stringify(data)});
         else await api('/api/finance/loans', {method:'POST', body:JSON.stringify(data)});
