@@ -1208,4 +1208,93 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
     /* ── 읽기 팝업 내부 ──────────────────── */
     .dr-info-row { flex-direction: column; gap: 6px; }
     .dr-event-box, .dr-summary { flex: none; width: 100%; }
+
+    /* ── 가계부 모바일 ──────────────────── */
+    .fin-page { padding: 8px; }
+    .fin-header { flex-wrap: wrap; gap: 4px; }
+    .fin-tabs { gap: 2px; }
+    .fin-tab { font-size: 11px; padding: 4px 8px; }
+    .fin-summary { flex-direction: column; gap: 6px; }
+    .fin-card { padding: 10px; }
+    .fin-cal-grid { gap: 1px; }
+    .fin-cal-cell { min-height: 50px; padding: 2px; }
+    .fin-cal-income, .fin-cal-expense { font-size: 8px; }
+    .fin-record { font-size: 12px; }
 }
+
+/* ── Finance (가계부) ────────────────────────────────── */
+.fin-page { padding: 16px; max-width: 900px; margin: 0 auto; }
+.fin-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.fin-nav { display: flex; align-items: center; gap: 8px; }
+.fin-nav h2 { font-size: 16px; min-width: 120px; text-align: center; }
+.fin-tabs { display: flex; gap: 4px; flex: 1; }
+.fin-tab { background: #e8e8e8; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; }
+.fin-tab.active { background: #1A73E8; color: white; }
+.fin-summary { display: flex; gap: 10px; margin-bottom: 16px; }
+.fin-card { flex: 1; padding: 14px; border-radius: 10px; text-align: center; }
+.fin-income { background: #e3f2fd; }
+.fin-expense { background: #fce4ec; }
+.fin-balance { background: #e8f5e9; }
+.fin-card-label { font-size: 11px; color: #666; margin-bottom: 4px; }
+.fin-card-amount { font-size: 18px; font-weight: bold; }
+.fin-income .fin-card-amount { color: #1A73E8; }
+.fin-expense .fin-card-amount { color: #e55; }
+.fin-balance .fin-card-amount { color: #2e7d32; }
+
+/* 카테고리 차트 */
+.fin-cat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.fin-cat-name { width: 50px; color: #666; }
+.fin-cat-bar { flex: 1; height: 16px; background: #f0f0f0; border-radius: 8px; overflow: hidden; }
+.fin-cat-bar div { height: 100%; background: #e55; border-radius: 8px; }
+.fin-cat-val { font-size: 11px; color: #888; min-width: 100px; text-align: right; }
+
+/* 거래 목록 */
+.fin-record { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; font-size: 13px; }
+.fin-record:hover { background: #f8f9fa; }
+.fin-r-date { color: #999; font-size: 11px; min-width: 40px; }
+.fin-r-cat { background: #f0f0f0; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+.fin-r-amount { font-weight: bold; min-width: 80px; text-align: right; }
+.fin-r-desc { flex: 1; color: #666; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fin-r-del { background: none; border: none; cursor: pointer; color: #ccc; font-size: 14px; }
+.fin-r-del:hover { color: #e55; }
+
+/* 캘린더 */
+.fin-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.fin-cal-head { text-align: center; font-size: 11px; font-weight: bold; color: #888; padding: 4px; }
+.fin-cal-cell { min-height: 70px; background: white; border: 1px solid #eee; border-radius: 4px; padding: 4px; cursor: pointer; }
+.fin-cal-cell:hover { border-color: #1A73E8; }
+.fin-cal-cell.overflow { opacity: 0.3; }
+.fin-cal-cell.today { border: 2px solid #1A73E8; }
+.fin-cal-day { font-size: 12px; font-weight: bold; margin-bottom: 2px; }
+.fin-cal-income { font-size: 10px; color: #1A73E8; }
+.fin-cal-expense { font-size: 10px; color: #e55; }
+.fin-cal-nospend { font-size: 12px; color: #4caf50; text-align: center; margin-top: 6px; }
+
+/* 고정비 */
+.fin-fixed-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.fin-fixed-header h3 { font-size: 14px; }
+.fin-fixed-total { font-size: 13px; color: #666; margin-bottom: 10px; padding: 8px; background: #f8f9fa; border-radius: 6px; }
+.fin-fixed-item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+.fin-fixed-item.inactive { opacity: 0.4; }
+.fin-f-name { flex: 1; font-weight: bold; }
+.fin-f-day { color: #888; font-size: 11px; }
+.fin-f-amount { color: #e55; font-weight: bold; }
+.fin-f-del { background: none; border: none; cursor: pointer; color: #ccc; }
+.fin-f-del:hover { color: #e55; }
+
+/* 대출 */
+.fin-loan-card { background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 14px; margin-bottom: 8px; }
+.fin-l-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.fin-l-name { font-weight: bold; font-size: 14px; }
+.fin-l-del { background: none; border: none; cursor: pointer; color: #ccc; }
+.fin-l-del:hover { color: #e55; }
+.fin-l-bar { height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+.fin-l-bar div { height: 100%; background: #1A73E8; border-radius: 4px; }
+.fin-l-info { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: #666; }
+.fin-l-pct { font-size: 12px; color: #1A73E8; font-weight: bold; margin-top: 4px; }
+
+/* 거래 등록 모달 */
+.fin-type-btns { display: flex; gap: 4px; margin-bottom: 10px; }
+.fin-type-btn { flex: 1; padding: 8px; border: 2px solid #e0e0e0; border-radius: 8px; background: white; cursor: pointer; font-size: 13px; font-family: inherit; text-align: center; }
+.fin-type-btn.active[data-type="expense"] { border-color: #e55; background: #fce4ec; color: #e55; }
+.fin-type-btn.active[data-type="income"] { border-color: #1A73E8; background: #e3f2fd; color: #1A73E8; }

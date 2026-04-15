@@ -157,3 +157,58 @@ class FreeMemo(db.Model):
             "updated_at": self.updated_at.isoformat() if self.updated_at else "",
         }
 
+
+class FinanceRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.String(128), db.ForeignKey("user.id"), nullable=False)
+    date_str = db.Column(db.String(10), nullable=False)
+    record_type = db.Column(db.String(10), nullable=False)  # income / expense
+    category = db.Column(db.String(100), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    description = db.Column(db.String(500), default="")
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+    def to_dict(self):
+        return {
+            "id": self.id, "date_str": self.date_str, "record_type": self.record_type,
+            "category": self.category, "amount": self.amount,
+            "description": self.description,
+            "created_at": self.created_at.isoformat() if self.created_at else "",
+        }
+
+
+class FixedExpense(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.String(128), db.ForeignKey("user.id"), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    category = db.Column(db.String(100), default="고정비")
+    day_of_month = db.Column(db.Integer, default=1)
+    is_active = db.Column(db.Boolean, default=True)
+
+    def to_dict(self):
+        return {
+            "id": self.id, "name": self.name, "amount": self.amount,
+            "category": self.category, "day_of_month": self.day_of_month,
+            "is_active": self.is_active,
+        }
+
+
+class Loan(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.String(128), db.ForeignKey("user.id"), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    total_amount = db.Column(db.Integer, nullable=False)
+    monthly_payment = db.Column(db.Integer, default=0)
+    remaining_amount = db.Column(db.Integer, default=0)
+    interest_rate = db.Column(db.Float, default=0)
+    start_date = db.Column(db.String(10), default="")
+
+    def to_dict(self):
+        return {
+            "id": self.id, "name": self.name,
+            "total_amount": self.total_amount, "monthly_payment": self.monthly_payment,
+            "remaining_amount": self.remaining_amount, "interest_rate": self.interest_rate,
+            "start_date": self.start_date,
+        }
+

@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupModals();
     setupDiary();
     setupFreeMemo();
+    setupFinance();
     showView('matrix');
     autoBackup();
 });
@@ -254,6 +255,10 @@ function showView(name) {
     } else if (name === 'diaryTrash') {
         document.getElementById('diaryTrashView').classList.remove('hidden');
         refreshTrash();
+    } else if (name === 'finance') {
+        document.getElementById('financeView').classList.remove('hidden');
+        document.getElementById('btnFinance').classList.add('active');
+        refreshFinance();
     }
 }
 
@@ -1854,5 +1859,205 @@ async function refreshTrash() {
         $list.appendChild(card);
     });
     updateCount();
+}
+
+/* ── Finance (가계부) ────────────────────────────────── */
+let finYear, finMonth, finTab = 'dashboard';
+
+function setupFinance() {
+    const today = new Date();
+    finYear = today.getFullYear();
+    finMonth = today.getMonth() + 1;
+    document.getElementById('finPrev').addEventListener('click', () => { finMonth--; if (finMonth < 1) { finMonth = 12; finYear--; } refreshFinance(); });
+    document.getElementById('finNext').addEventListener('click', () => { finMonth++; if (finMonth > 12) { finMonth = 1; finYear++; } refreshFinance(); });
+    document.querySelectorAll('.fin-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            finTab = tab.dataset.ftab;
+            document.querySelectorAll('.fin-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            document.querySelectorAll('.fin-view').forEach(v => v.classList.add('hidden'));
+            document.getElementById({dashboard:'finDashboard',calendar:'finCalendar',fixed:'finFixed',loans:'finLoans'}[finTab]).classList.remove('hidden');
+            refreshFinance();
+        });
+    });
+    document.querySelectorAll('.fin-type-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.fin-type-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+    document.getElementById('finAddBtn').addEventListener('click', () => openFinModal());
+    document.getElementById('finCancel').addEventListener('click', () => document.getElementById('finModal').classList.add('hidden'));
+    document.getElementById('finSave').addEventListener('click', saveFinRecord);
+    document.getElementById('fixedAddBtn').addEventListener('click', () => {
+        const name = prompt('고정비 이름:'); if (!name) return;
+        const amount = prompt('월 금액:'); if (!amount) return;
+        const day = prompt('매월 결제일 (1~31):', '1');
+        api('/api/finance/fixed', {method:'POST', body:JSON.stringify({name, amount:parseInt(amount), day_of_month:parseInt(day||1)})}).then(() => refreshFinance());
+    });
+    document.getElementById('loanAddBtn').addEventListener('click', () => {
+        const name = prompt('대출명:'); if (!name) return;
+        const total = prompt('총 대출금액:'); if (!total) return;
+        const monthly = prompt('월 상환액:', '0');
+        const remaining = prompt('잔여금액:', total);
+        const rate = prompt('금리(%):', '0');
+        api('/api/finance/loans', {method:'POST', body:JSON.stringify({name, total_amount:parseInt(total), monthly_payment:parseInt(monthly||0), remaining_amount:parseInt(remaining||total), interest_rate:parseFloat(rate||0)})}).then(() => refreshFinance());
+    });
+}
+
+function openFinModal(record = null) {
+    document.getElementById('finModalTitle').textContent = record ? '거래 수정' : '거래 등록';
+    document.getElementById('finDate').value = record?.date_str || todayStr();
+    document.getElementById('finAmount').value = record?.amount || '';
+    document.getElementById('finDesc').value = record?.description || '';
+    document.getElementById('finEditId').value = record?.id || '';
+    document.querySelectorAll('.fin-type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === (record?.record_type || 'expense')));
+    if (record?.category) document.getElementById('finCategory').value = record.category;
+    document.getElementById('finModal').classList.remove('hidden');
+}
+
+async function saveFinRecord() {
+    const type = document.querySelector('.fin-type-btn.active')?.dataset.type || 'expense';
+    const data = {
+        date_str: document.getElementById('finDate').value,
+        record_type: type,
+        category: document.getElementById('finCategory').value,
+        amount: parseInt(document.getElementById('finAmount').value) || 0,
+        description: document.getElementById('finDesc').value,
+    };
+    if (!data.date_str || !data.amount) { alert('날짜와 금액을 입력해주세요'); return; }
+    const editId = document.getElementById('finEditId').value;
+    if (editId) await api(`/api/finance/${editId}`, {method:'PUT', body:JSON.stringify(data)});
+    else await api('/api/finance', {method:'POST', body:JSON.stringify(data)});
+    document.getElementById('finModal').classList.add('hidden');
+    refreshFinance();
+}
+
+async function refreshFinance() {
+    document.getElementById('finTitle').textContent = `${finYear}년 ${finMonth}월`;
+    if (finTab === 'dashboard') await renderFinDashboard();
+    else if (finTab === 'calendar') await renderFinCalendar();
+    else if (finTab === 'fixed') await renderFinFixed();
+    else if (finTab === 'loans') await renderFinLoans();
+}
+
+async function renderFinDashboard() {
+    const [summary, records] = await Promise.all([
+        api(`/api/finance/summary?year=${finYear}&month=${finMonth}`),
+        api(`/api/finance?year=${finYear}&month=${finMonth}`)
+    ]);
+    // 요약 카드
+    document.getElementById('finSummary').innerHTML = `
+        <div class="fin-card fin-income"><div class="fin-card-label">수입</div><div class="fin-card-amount">+${summary.income.toLocaleString()}원</div></div>
+        <div class="fin-card fin-expense"><div class="fin-card-label">지출</div><div class="fin-card-amount">-${summary.expense.toLocaleString()}원</div></div>
+        <div class="fin-card fin-balance"><div class="fin-card-label">잔액</div><div class="fin-card-amount">${summary.balance.toLocaleString()}원</div></div>
+    `;
+    // 카테고리 차트
+    const $chart = document.getElementById('finCatChart');
+    const cats = Object.entries(summary.categories).sort((a,b) => b[1]-a[1]);
+    if (cats.length && summary.expense > 0) {
+        $chart.innerHTML = '<h3 style="font-size:13px;margin-bottom:8px">카테고리별 지출</h3>';
+        cats.forEach(([cat, amt]) => {
+            const pct = Math.round(amt / summary.expense * 100);
+            $chart.innerHTML += `<div class="fin-cat-row"><span class="fin-cat-name">${esc(cat)}</span><div class="fin-cat-bar"><div style="width:${pct}%"></div></div><span class="fin-cat-val">${pct}% ${amt.toLocaleString()}</span></div>`;
+        });
+    } else { $chart.innerHTML = ''; }
+    // 거래 목록
+    const $list = document.getElementById('finList');
+    $list.innerHTML = '';
+    if (!records.length) { $list.innerHTML = '<div style="color:#999;padding:20px;text-align:center">거래 내역이 없습니다.</div>'; return; }
+    records.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'fin-record';
+        const color = r.record_type === 'income' ? '#1A73E8' : '#e55';
+        const sign = r.record_type === 'income' ? '+' : '-';
+        div.innerHTML = `<span class="fin-r-date">${r.date_str.slice(5)}</span><span class="fin-r-cat">${esc(r.category)}</span><span class="fin-r-amount" style="color:${color}">${sign}${r.amount.toLocaleString()}</span><span class="fin-r-desc">${esc(r.description)}</span><button class="fin-r-del" title="삭제">&times;</button>`;
+        div.addEventListener('click', (e) => { if (!e.target.classList.contains('fin-r-del')) openFinModal(r); });
+        div.querySelector('.fin-r-del').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (confirm('삭제할까요?')) { await api(`/api/finance/${r.id}`, {method:'DELETE'}); refreshFinance(); }
+        });
+        $list.appendChild(div);
+    });
+}
+
+async function renderFinCalendar() {
+    const records = await api(`/api/finance?year=${finYear}&month=${finMonth}`);
+    const byDate = {};
+    records.forEach(r => {
+        if (!byDate[r.date_str]) byDate[r.date_str] = {income: 0, expense: 0};
+        if (r.record_type === 'income') byDate[r.date_str].income += r.amount;
+        else byDate[r.date_str].expense += r.amount;
+    });
+    const $grid = document.getElementById('finCalGrid');
+    $grid.innerHTML = '';
+    ['일','월','화','수','목','금','토'].forEach(d => {
+        $grid.innerHTML += `<div class="fin-cal-head">${d}</div>`;
+    });
+    const grid = monthGrid(finYear, finMonth);
+    grid.flat().forEach(([day, yr, mo, ov]) => {
+        const ds = `${yr}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const data = byDate[ds];
+        const cell = document.createElement('div');
+        cell.className = 'fin-cal-cell' + (ov ? ' overflow' : '');
+        const today = todayStr();
+        if (ds === today) cell.classList.add('today');
+        let inner = `<div class="fin-cal-day">${day}</div>`;
+        if (data) {
+            if (data.income) inner += `<div class="fin-cal-income">+${data.income >= 10000 ? Math.round(data.income/10000)+'만' : data.income.toLocaleString()}</div>`;
+            if (data.expense) inner += `<div class="fin-cal-expense">-${data.expense >= 10000 ? Math.round(data.expense/10000)+'만' : data.expense.toLocaleString()}</div>`;
+        } else if (!ov && mo === finMonth) {
+            const d = new Date(yr, mo-1, day);
+            if (d <= new Date()) inner += `<div class="fin-cal-nospend">✓</div>`;
+        }
+        cell.innerHTML = inner;
+        cell.addEventListener('click', () => openFinModal({date_str: ds}));
+        $grid.appendChild(cell);
+    });
+}
+
+async function renderFinFixed() {
+    const items = await api('/api/finance/fixed');
+    const $list = document.getElementById('finFixedList');
+    $list.innerHTML = '';
+    if (!items.length) { $list.innerHTML = '<div style="color:#999;padding:20px;text-align:center">고정비가 없습니다.</div>'; return; }
+    const total = items.filter(i => i.is_active).reduce((s, i) => s + i.amount, 0);
+    $list.innerHTML = `<div class="fin-fixed-total">월 고정비 합계: <strong>${total.toLocaleString()}원</strong></div>`;
+    items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'fin-fixed-item' + (item.is_active ? '' : ' inactive');
+        div.innerHTML = `<span class="fin-f-name">${esc(item.name)}</span><span class="fin-f-day">매월 ${item.day_of_month}일</span><span class="fin-f-amount">${item.amount.toLocaleString()}원</span><button class="fin-f-del">&times;</button>`;
+        div.querySelector('.fin-f-del').addEventListener('click', async () => {
+            if (confirm(`'${item.name}' 삭제?`)) { await api(`/api/finance/fixed/${item.id}`, {method:'DELETE'}); refreshFinance(); }
+        });
+        $list.appendChild(div);
+    });
+}
+
+async function renderFinLoans() {
+    const items = await api('/api/finance/loans');
+    const $list = document.getElementById('finLoanList');
+    $list.innerHTML = '';
+    if (!items.length) { $list.innerHTML = '<div style="color:#999;padding:20px;text-align:center">대출이 없습니다.</div>'; return; }
+    items.forEach(item => {
+        const pct = item.total_amount > 0 ? Math.round((1 - item.remaining_amount / item.total_amount) * 100) : 0;
+        const div = document.createElement('div');
+        div.className = 'fin-loan-card';
+        div.innerHTML = `
+            <div class="fin-l-header"><span class="fin-l-name">${esc(item.name)}</span><button class="fin-l-del">&times;</button></div>
+            <div class="fin-l-bar"><div style="width:${pct}%"></div></div>
+            <div class="fin-l-info">
+                <span>총액 ${item.total_amount.toLocaleString()}원</span>
+                <span>잔여 ${item.remaining_amount.toLocaleString()}원</span>
+                <span>월 ${item.monthly_payment.toLocaleString()}원</span>
+                ${item.interest_rate ? `<span>금리 ${item.interest_rate}%</span>` : ''}
+            </div>
+            <div class="fin-l-pct">${pct}% 상환</div>
+        `;
+        div.querySelector('.fin-l-del').addEventListener('click', async () => {
+            if (confirm(`'${item.name}' 삭제?`)) { await api(`/api/finance/loans/${item.id}`, {method:'DELETE'}); refreshFinance(); }
+        });
+        $list.appendChild(div);
+    });
 }
 

@@ -9,7 +9,7 @@ from authlib.integrations.flask_client import OAuth
 from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 
-from models_db import db, User, Todo, Memo, Habit, HabitCheck, BucketItem, Diary, FreeMemo, StickyNote, MemoFolder
+from models_db import db, User, Todo, Memo, Habit, HabitCheck, BucketItem, Diary, FreeMemo, StickyNote, MemoFolder, FinanceRecord, FixedExpense, Loan
 from holidays_kr import HOLIDAYS_KR
 
 from pathlib import Path
@@ -685,11 +685,166 @@ def backup_data():
         "free_memos": [m.to_dict() for m in FreeMemo.query.filter_by(user_id=current_user.id).all()],
         "memo_folders": [f.to_dict() for f in MemoFolder.query.filter_by(user_id=current_user.id).all()],
         "sticky_notes": [n.to_dict() for n in StickyNote.query.filter_by(user_id=current_user.id).all()],
+        "finance_records": [r.to_dict() for r in FinanceRecord.query.filter_by(user_id=current_user.id).all()],
+        "fixed_expenses": [f.to_dict() for f in FixedExpense.query.filter_by(user_id=current_user.id).all()],
+        "loans": [l.to_dict() for l in Loan.query.filter_by(user_id=current_user.id).all()],
     }
     resp = make_response(json.dumps(data, ensure_ascii=False, indent=2))
     resp.headers['Content-Type'] = 'application/json; charset=utf-8'
     resp.headers['Content-Disposition'] = f'attachment; filename=todo-matrix-backup-{datetime.now().strftime("%Y%m%d")}.json'
     return resp
+
+
+# ── Finance API ──────────────────────────────────────────
+
+@app.route("/api/finance")
+@login_required
+def get_finance():
+    year = request.args.get("year", type=int)
+    month = request.args.get("month", type=int)
+    q = FinanceRecord.query.filter_by(user_id=current_user.id)
+    if year and month:
+        prefix = f"{year}-{str(month).zfill(2)}"
+        q = q.filter(FinanceRecord.date_str.like(f"{prefix}%"))
+    records = q.order_by(FinanceRecord.date_str.desc(), FinanceRecord.id.desc()).all()
+    return jsonify([r.to_dict() for r in records])
+
+
+@app.route("/api/finance/summary")
+@login_required
+def get_finance_summary():
+    year = request.args.get("year", type=int)
+    month = request.args.get("month", type=int)
+    prefix = f"{year}-{str(month).zfill(2)}" if year and month else ""
+    q = FinanceRecord.query.filter_by(user_id=current_user.id)
+    if prefix:
+        q = q.filter(FinanceRecord.date_str.like(f"{prefix}%"))
+    records = q.all()
+    income = sum(r.amount for r in records if r.record_type == 'income')
+    expense = sum(r.amount for r in records if r.record_type == 'expense')
+    cats = {}
+    for r in records:
+        if r.record_type == 'expense':
+            cats[r.category] = cats.get(r.category, 0) + r.amount
+    return jsonify({"income": income, "expense": expense, "balance": income - expense, "categories": cats})
+
+
+@app.route("/api/finance", methods=["POST"])
+@login_required
+def create_finance():
+    data = request.json
+    record = FinanceRecord(
+        user_id=current_user.id, date_str=data["date_str"],
+        record_type=data["record_type"], category=data["category"],
+        amount=data["amount"], description=data.get("description", ""),
+    )
+    db.session.add(record)
+    db.session.commit()
+    return jsonify(record.to_dict()), 201
+
+
+@app.route("/api/finance/<int:rid>", methods=["PUT"])
+@login_required
+def update_finance(rid):
+    r = FinanceRecord.query.filter_by(id=rid, user_id=current_user.id).first_or_404()
+    data = request.json
+    for k in ["date_str", "record_type", "category", "amount", "description"]:
+        if k in data:
+            setattr(r, k, data[k])
+    db.session.commit()
+    return jsonify(r.to_dict())
+
+
+@app.route("/api/finance/<int:rid>", methods=["DELETE"])
+@login_required
+def delete_finance(rid):
+    r = FinanceRecord.query.filter_by(id=rid, user_id=current_user.id).first_or_404()
+    db.session.delete(r)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+# ── Fixed Expense API ────────────────────────────────────
+
+@app.route("/api/finance/fixed")
+@login_required
+def get_fixed():
+    items = FixedExpense.query.filter_by(user_id=current_user.id).all()
+    return jsonify([i.to_dict() for i in items])
+
+
+@app.route("/api/finance/fixed", methods=["POST"])
+@login_required
+def create_fixed():
+    data = request.json
+    item = FixedExpense(user_id=current_user.id, name=data["name"], amount=data["amount"],
+                        category=data.get("category", "고정비"), day_of_month=data.get("day_of_month", 1))
+    db.session.add(item)
+    db.session.commit()
+    return jsonify(item.to_dict()), 201
+
+
+@app.route("/api/finance/fixed/<int:fid>", methods=["PUT"])
+@login_required
+def update_fixed(fid):
+    item = FixedExpense.query.filter_by(id=fid, user_id=current_user.id).first_or_404()
+    data = request.json
+    for k in ["name", "amount", "category", "day_of_month", "is_active"]:
+        if k in data:
+            setattr(item, k, data[k])
+    db.session.commit()
+    return jsonify(item.to_dict())
+
+
+@app.route("/api/finance/fixed/<int:fid>", methods=["DELETE"])
+@login_required
+def delete_fixed(fid):
+    item = FixedExpense.query.filter_by(id=fid, user_id=current_user.id).first_or_404()
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+# ── Loan API ─────────────────────────────────────────────
+
+@app.route("/api/finance/loans")
+@login_required
+def get_loans():
+    items = Loan.query.filter_by(user_id=current_user.id).all()
+    return jsonify([i.to_dict() for i in items])
+
+
+@app.route("/api/finance/loans", methods=["POST"])
+@login_required
+def create_loan():
+    data = request.json
+    item = Loan(user_id=current_user.id, name=data["name"], total_amount=data["total_amount"],
+                monthly_payment=data.get("monthly_payment", 0), remaining_amount=data.get("remaining_amount", 0),
+                interest_rate=data.get("interest_rate", 0), start_date=data.get("start_date", ""))
+    db.session.add(item)
+    db.session.commit()
+    return jsonify(item.to_dict()), 201
+
+
+@app.route("/api/finance/loans/<int:lid>", methods=["PUT"])
+@login_required
+def update_loan(lid):
+    item = Loan.query.filter_by(id=lid, user_id=current_user.id).first_or_404()
+    data = request.json
+    for k in ["name", "total_amount", "monthly_payment", "remaining_amount", "interest_rate", "start_date"]:
+        if k in data:
+            setattr(item, k, data[k])
+    db.session.commit()
+    return jsonify(item.to_dict())
+
+
+@app.route("/api/finance/loans/<int:lid>", methods=["DELETE"])
+@login_required
+def delete_loan(lid):
+    item = Loan.query.filter_by(id=lid, user_id=current_user.id).first_or_404()
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({"ok": True})
 
 
 # ── 헬퍼 ─────────────────────────────────────────────────

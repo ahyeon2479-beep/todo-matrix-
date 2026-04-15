@@ -29,6 +29,7 @@
             <button class="nav-btn active" id="btnHabitFull" data-view="habitFull">습관 체크</button>
             <button class="nav-btn" id="btnDiary" data-view="diary">일기장</button>
             <button class="nav-btn" id="btnFreeMemo" data-view="freeMemo">메모장</button>
+            <button class="nav-btn" id="btnFinance" data-view="finance">가계부</button>
             <button class="btn-primary" id="btnAddTodo">+ 새 할 일</button>
             <div class="user-info">
                 <span id="userName">{{ user.name }}</span>
@@ -295,7 +296,89 @@
             </div>
         </div>
 
+        <!-- 가계부 뷰 -->
+        <div class="view hidden" id="financeView">
+            <div class="fin-page">
+                <div class="fin-header">
+                    <div class="fin-nav">
+                        <button class="btn-sm" id="finPrev">◀</button>
+                        <h2 id="finTitle">2026년 4월</h2>
+                        <button class="btn-sm" id="finNext">▶</button>
+                    </div>
+                    <div class="fin-tabs">
+                        <button class="fin-tab active" data-ftab="dashboard">대시보드</button>
+                        <button class="fin-tab" data-ftab="calendar">캘린더</button>
+                        <button class="fin-tab" data-ftab="fixed">고정비</button>
+                        <button class="fin-tab" data-ftab="loans">대출</button>
+                    </div>
+                    <button class="btn-primary" id="finAddBtn">+ 등록</button>
+                </div>
+                <!-- 대시보드 -->
+                <div class="fin-view" id="finDashboard">
+                    <div class="fin-summary" id="finSummary"></div>
+                    <div class="fin-cat-chart" id="finCatChart"></div>
+                    <h3 style="font-size:14px;margin:12px 0 8px">최근 거래</h3>
+                    <div class="fin-list" id="finList"></div>
+                </div>
+                <!-- 캘린더 -->
+                <div class="fin-view hidden" id="finCalendar">
+                    <div class="fin-cal-grid" id="finCalGrid"></div>
+                </div>
+                <!-- 고정비 -->
+                <div class="fin-view hidden" id="finFixed">
+                    <div class="fin-fixed-header">
+                        <h3>월 고정비</h3>
+                        <button class="btn-sm" id="fixedAddBtn">+ 추가</button>
+                    </div>
+                    <div id="finFixedList"></div>
+                </div>
+                <!-- 대출 -->
+                <div class="fin-view hidden" id="finLoans">
+                    <div class="fin-fixed-header">
+                        <h3>대출 관리</h3>
+                        <button class="btn-sm" id="loanAddBtn">+ 추가</button>
+                    </div>
+                    <div id="finLoanList"></div>
+                </div>
+            </div>
+        </div>
+
     </main>
+
+    <!-- ── 모달: 거래 등록 ────────────────────────────── -->
+    <div class="modal-overlay hidden" id="finModal">
+        <div class="modal">
+            <h3 id="finModalTitle">거래 등록</h3>
+            <div class="fin-type-btns">
+                <button class="fin-type-btn active" data-type="expense">지출</button>
+                <button class="fin-type-btn" data-type="income">수입</button>
+            </div>
+            <label>날짜</label>
+            <input type="date" id="finDate">
+            <label>카테고리</label>
+            <select id="finCategory">
+                <optgroup label="지출" id="finCatExpense">
+                    <option value="식비">식비</option><option value="교통">교통</option>
+                    <option value="쇼핑">쇼핑</option><option value="취미">취미</option>
+                    <option value="의료">의료</option><option value="통신">통신</option>
+                    <option value="주거">주거</option><option value="기타지출">기타</option>
+                </optgroup>
+                <optgroup label="수입" id="finCatIncome">
+                    <option value="급여">급여</option><option value="부수입">부수입</option>
+                    <option value="용돈">용돈</option><option value="기타수입">기타</option>
+                </optgroup>
+            </select>
+            <label>금액</label>
+            <input type="number" id="finAmount" placeholder="금액 입력">
+            <label>메모</label>
+            <input type="text" id="finDesc" placeholder="내용 (선택)">
+            <input type="hidden" id="finEditId">
+            <div class="modal-buttons">
+                <button class="btn-cancel" id="finCancel">취소</button>
+                <button class="btn-primary" id="finSave">저장</button>
+            </div>
+        </div>
+    </div>
 
     <!-- ── 일기 작성 전체 페이지 ─────────────────────── -->
     <div class="diary-editor hidden" id="diaryEditor">
