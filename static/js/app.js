@@ -1869,6 +1869,20 @@ async function refreshTrash() {
 /* ── Finance (가계부) ────────────────────────────────── */
 let finYear, finMonth, finTab = 'dashboard';
 
+let payAccountsCache = [];
+
+async function loadPayAccounts() {
+    payAccountsCache = await api('/api/pay-accounts');
+    document.querySelectorAll('#fixedPayMethod, #loanAccount').forEach($sel => {
+        const cur = $sel.value;
+        $sel.innerHTML = '<option value="">선택 안 함</option>';
+        payAccountsCache.forEach(a => {
+            $sel.innerHTML += `<option value="${esc(a.name)}">${esc(a.name)}</option>`;
+        });
+        if (cur) $sel.value = cur;
+    });
+}
+
 function setupFinance() {
     const today = new Date();
     finYear = today.getFullYear();
@@ -1892,6 +1906,15 @@ function setupFinance() {
         });
     });
     document.getElementById('finAddBtn').addEventListener('click', () => openFinModal());
+    // 계좌 추가 버튼 (노션처럼)
+    document.querySelectorAll('.pay-account-add').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const name = prompt('계좌를 추가하세요:\n예: 국민 123-456-789, 신한카드');
+            if (!name?.trim()) return;
+            await api('/api/pay-accounts', {method:'POST', body:JSON.stringify({name: name.trim()})});
+            await loadPayAccounts();
+        });
+    });
     document.getElementById('finCancel').addEventListener('click', () => document.getElementById('finModal').classList.add('hidden'));
     document.getElementById('finSave').addEventListener('click', saveFinRecord);
     // 고정비 모달
@@ -1982,19 +2005,21 @@ function calcLoanInterest() {
     }
 }
 
-function openFixedModal(item = null) {
+async function openFixedModal(item = null) {
+    await loadPayAccounts();
     document.getElementById('fixedModalTitle').textContent = item ? '고정비 수정' : '고정비 등록';
     document.getElementById('fixedCategory').value = item?.category || '기타';
     document.getElementById('fixedName').value = item?.name || '';
     document.getElementById('fixedAmount').value = item?.amount || '';
-    document.getElementById('fixedPayMethod').value = item?.pay_method || '';
     document.getElementById('fixedDay').value = item?.day_of_month || 1;
     document.getElementById('fixedNote').value = item?.note || '';
     document.getElementById('fixedEditId').value = item?.id || '';
+    document.getElementById('fixedPayMethod').value = item?.pay_method || '';
     document.getElementById('fixedModal').classList.remove('hidden');
 }
 
-function openLoanModal(item = null) {
+async function openLoanModal(item = null) {
+    await loadPayAccounts();
     document.getElementById('loanModalTitle').textContent = item ? '대출 수정' : '대출 등록';
     document.getElementById('loanName').value = item?.name || '';
     document.getElementById('loanBank').value = item?.bank || '';

@@ -9,7 +9,7 @@ from authlib.integrations.flask_client import OAuth
 from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 
-from models_db import db, User, Todo, Memo, Habit, HabitCheck, BucketItem, Diary, FreeMemo, StickyNote, MemoFolder, FinanceRecord, FixedExpense, Loan
+from models_db import db, User, Todo, Memo, Habit, HabitCheck, BucketItem, Diary, FreeMemo, StickyNote, MemoFolder, PayAccount, FinanceRecord, FixedExpense, Loan
 from holidays_kr import HOLIDAYS_KR
 
 from pathlib import Path
@@ -693,6 +693,36 @@ def backup_data():
     resp.headers['Content-Type'] = 'application/json; charset=utf-8'
     resp.headers['Content-Disposition'] = f'attachment; filename=todo-matrix-backup-{datetime.now().strftime("%Y%m%d")}.json'
     return resp
+
+
+# ── Pay Account API ───────────────────────────────────────
+
+@app.route("/api/pay-accounts")
+@login_required
+def get_pay_accounts():
+    items = PayAccount.query.filter_by(user_id=current_user.id).all()
+    return jsonify([i.to_dict() for i in items])
+
+
+@app.route("/api/pay-accounts", methods=["POST"])
+@login_required
+def add_pay_account():
+    name = request.json.get("name", "").strip()
+    if not name:
+        return jsonify({"error": "이름 필요"}), 400
+    item = PayAccount(user_id=current_user.id, name=name)
+    db.session.add(item)
+    db.session.commit()
+    return jsonify(item.to_dict()), 201
+
+
+@app.route("/api/pay-accounts/<int:pid>", methods=["DELETE"])
+@login_required
+def delete_pay_account(pid):
+    item = PayAccount.query.filter_by(id=pid, user_id=current_user.id).first_or_404()
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({"ok": True})
 
 
 # ── Finance API ──────────────────────────────────────────

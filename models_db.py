@@ -158,6 +158,15 @@ class FreeMemo(db.Model):
         }
 
 
+class PayAccount(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.String(128), db.ForeignKey("user.id"), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+
+    def to_dict(self):
+        return {"id": self.id, "name": self.name}
+
+
 class FinanceRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.String(128), db.ForeignKey("user.id"), nullable=False)

@@ -420,7 +420,10 @@
             <label>매월 상환일 (1~31)</label>
             <input type="number" id="loanPayDay" min="1" max="31" placeholder="예: 25">
             <label>돈 나가는 계좌</label>
-            <input type="text" id="loanAccount" placeholder="예: 국민 123-456-789">
+            <div style="display:flex;gap:4px">
+                <select id="loanAccount" style="flex:1;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:13px;font-family:inherit"></select>
+                <button type="button" class="btn-sm pay-account-add" title="계좌 추가">+</button>
+            </div>
             <input type="hidden" id="loanEditId">
             <div class="modal-buttons">
                 <button class="btn-cancel" id="loanCancel">취소</button>
@@ -449,8 +452,11 @@
             <input type="text" id="fixedName" placeholder="예: 넷플릭스, ChatGPT">
             <label>월 비용</label>
             <input type="number" id="fixedAmount" placeholder="금액">
-            <label>결제수단</label>
-            <input type="text" id="fixedPayMethod" placeholder="예: 신한카드, 계좌이체">
+            <label>돈 나가는 계좌</label>
+            <div style="display:flex;gap:4px">
+                <select id="fixedPayMethod" style="flex:1;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:13px;font-family:inherit"></select>
+                <button type="button" class="btn-sm pay-account-add" title="계좌 추가">+</button>
+            </div>
             <label>결제일</label>
             <input type="number" id="fixedDay" min="1" max="31" value="1" placeholder="1~31">
             <label>비고</label>
