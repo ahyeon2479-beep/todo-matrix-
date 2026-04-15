@@ -280,6 +280,18 @@ def delete_habit(habit_id):
     return jsonify({"ok": True})
 
 
+@app.route("/api/habits/reorder", methods=["POST"])
+@login_required
+def reorder_habits():
+    ids = request.json.get("ids", [])
+    for i, hid in enumerate(ids):
+        habit = Habit.query.filter_by(id=hid, user_id=current_user.id).first()
+        if habit:
+            habit.order = i
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
 @app.route("/api/habits/<int:habit_id>/toggle", methods=["POST"])
 @login_required
 def toggle_habit(habit_id):

@@ -426,7 +426,11 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
     border-radius: 12px;
     padding: 4px 10px;
     font-size: 11px;
+    cursor: grab;
+    transition: transform 0.1s;
 }
+.habit-chip:active { cursor: grabbing; }
+.habit-chip.drag-over { background: #c8e6c9; transform: scale(1.05); }
 .habit-chip button {
     background: none;
     border: none;
