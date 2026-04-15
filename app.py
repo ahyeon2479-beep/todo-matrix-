@@ -778,7 +778,8 @@ def get_fixed():
 def create_fixed():
     data = request.json
     item = FixedExpense(user_id=current_user.id, name=data["name"], amount=data["amount"],
-                        category=data.get("category", "고정비"), day_of_month=data.get("day_of_month", 1))
+                        category=data.get("category", "기타"), day_of_month=data.get("day_of_month", 1),
+                        pay_method=data.get("pay_method", ""), note=data.get("note", ""))
     db.session.add(item)
     db.session.commit()
     return jsonify(item.to_dict()), 201
@@ -789,7 +790,7 @@ def create_fixed():
 def update_fixed(fid):
     item = FixedExpense.query.filter_by(id=fid, user_id=current_user.id).first_or_404()
     data = request.json
-    for k in ["name", "amount", "category", "day_of_month", "is_active"]:
+    for k in ["name", "amount", "category", "day_of_month", "is_active", "pay_method", "note"]:
         if k in data:
             setattr(item, k, data[k])
     db.session.commit()
@@ -886,6 +887,17 @@ with app.app_context():
         for col_name, col_type in _new_loan_cols:
             try:
                 db.session.execute(db.text(f"ALTER TABLE loan ADD COLUMN {col_name} {col_type}"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+        # FixedExpense 테이블에 새 컬럼 추가
+        _new_fixed_cols = [
+            ("pay_method", "VARCHAR(200) DEFAULT ''"),
+            ("note", "VARCHAR(500) DEFAULT ''"),
+        ]
+        for col_name, col_type in _new_fixed_cols:
+            try:
+                db.session.execute(db.text(f"ALTER TABLE fixed_expense ADD COLUMN {col_name} {col_type}"))
                 db.session.commit()
             except Exception:
                 db.session.rollback()

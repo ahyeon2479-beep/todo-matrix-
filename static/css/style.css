@@ -1289,6 +1289,9 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
 .fin-f-name { flex: 1; font-weight: bold; }
 .fin-f-day { color: #888; font-size: 11px; }
 .fin-f-amount { color: #e55; font-weight: bold; }
+.fin-f-cat { background: #e8e8e8; padding: 2px 8px; border-radius: 10px; font-size: 10px; color: #555; }
+.fin-f-pay { font-size: 11px; color: #1A73E8; }
+.fin-f-note { font-size: 11px; color: #999; }
 .fin-f-del { background: none; border: none; cursor: pointer; color: #ccc; }
 .fin-f-del:hover { color: #e55; }
 

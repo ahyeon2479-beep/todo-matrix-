@@ -182,15 +182,18 @@ class FixedExpense(db.Model):
     user_id = db.Column(db.String(128), db.ForeignKey("user.id"), nullable=False)
     name = db.Column(db.String(200), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
-    category = db.Column(db.String(100), default="고정비")
+    category = db.Column(db.String(100), default="기타")
     day_of_month = db.Column(db.Integer, default=1)
     is_active = db.Column(db.Boolean, default=True)
+    pay_method = db.Column(db.String(200), default="")
+    note = db.Column(db.String(500), default="")
 
     def to_dict(self):
         return {
             "id": self.id, "name": self.name, "amount": self.amount,
             "category": self.category, "day_of_month": self.day_of_month,
-            "is_active": self.is_active,
+            "is_active": self.is_active, "pay_method": self.pay_method or "",
+            "note": self.note or "",
         }
 
 

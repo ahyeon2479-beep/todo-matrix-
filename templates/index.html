@@ -436,21 +436,28 @@
     <div class="modal-overlay hidden" id="fixedModal">
         <div class="modal">
             <h3 id="fixedModalTitle">고정비 등록</h3>
-            <label>이름</label>
-            <input type="text" id="fixedName" placeholder="예: 월세, 넷플릭스">
-            <label>월 금액</label>
-            <input type="number" id="fixedAmount" placeholder="금액">
-            <label>카테고리</label>
+            <label>구분</label>
             <select id="fixedCategory">
-                <option value="주거">주거</option>
+                <option value="통신비">통신비</option>
+                <option value="업무툴">업무툴</option>
+                <option value="AI">AI</option>
+                <option value="스토리지">스토리지</option>
+                <option value="클라우드">클라우드</option>
+                <option value="OTT">OTT</option>
                 <option value="보험">보험</option>
-                <option value="구독">구독</option>
-                <option value="통신">통신</option>
-                <option value="대출상환">대출상환</option>
-                <option value="기타고정비">기타</option>
+                <option value="주거">주거</option>
+                <option value="기타">기타</option>
             </select>
-            <label>매월 결제일</label>
+            <label>항목명</label>
+            <input type="text" id="fixedName" placeholder="예: 넷플릭스, ChatGPT">
+            <label>월 비용</label>
+            <input type="number" id="fixedAmount" placeholder="금액">
+            <label>결제수단</label>
+            <input type="text" id="fixedPayMethod" placeholder="예: 신한카드, 계좌이체">
+            <label>결제일</label>
             <input type="number" id="fixedDay" min="1" max="31" value="1" placeholder="1~31">
+            <label>비고</label>
+            <input type="text" id="fixedNote" placeholder="메모 (선택)">
             <input type="hidden" id="fixedEditId">
             <div class="modal-buttons">
                 <button class="btn-cancel" id="fixedCancel">취소</button>

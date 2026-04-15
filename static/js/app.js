@@ -1903,8 +1903,10 @@ function setupFinance() {
             amount: parseInt(document.getElementById('fixedAmount').value) || 0,
             category: document.getElementById('fixedCategory').value,
             day_of_month: parseInt(document.getElementById('fixedDay').value) || 1,
+            pay_method: document.getElementById('fixedPayMethod').value.trim(),
+            note: document.getElementById('fixedNote').value.trim(),
         };
-        if (!data.name || !data.amount) { alert('이름과 금액을 입력해주세요'); return; }
+        if (!data.name || !data.amount) { alert('항목명과 금액을 입력해주세요'); return; }
         const editId = document.getElementById('fixedEditId').value;
         if (editId) await api(`/api/finance/fixed/${editId}`, {method:'PUT', body:JSON.stringify(data)});
         else await api('/api/finance/fixed', {method:'POST', body:JSON.stringify(data)});
@@ -1982,10 +1984,12 @@ function calcLoanInterest() {
 
 function openFixedModal(item = null) {
     document.getElementById('fixedModalTitle').textContent = item ? '고정비 수정' : '고정비 등록';
+    document.getElementById('fixedCategory').value = item?.category || '기타';
     document.getElementById('fixedName').value = item?.name || '';
     document.getElementById('fixedAmount').value = item?.amount || '';
-    document.getElementById('fixedCategory').value = item?.category || '주거';
+    document.getElementById('fixedPayMethod').value = item?.pay_method || '';
     document.getElementById('fixedDay').value = item?.day_of_month || 1;
+    document.getElementById('fixedNote').value = item?.note || '';
     document.getElementById('fixedEditId').value = item?.id || '';
     document.getElementById('fixedModal').classList.remove('hidden');
 }
@@ -2211,7 +2215,7 @@ async function renderFinFixed() {
     items.forEach(item => {
         const div = document.createElement('div');
         div.className = 'fin-fixed-item' + (item.is_active ? '' : ' inactive');
-        div.innerHTML = `<span class="fin-f-name">${esc(item.name)}</span><span class="fin-f-day">매월 ${item.day_of_month}일</span><span class="fin-f-amount">${item.amount.toLocaleString()}원</span><button class="fin-f-del">&times;</button>`;
+        div.innerHTML = `<span class="fin-f-cat">${esc(item.category)}</span><span class="fin-f-name">${esc(item.name)}</span><span class="fin-f-day">매월 ${item.day_of_month}일</span><span class="fin-f-amount">${item.amount.toLocaleString()}원</span>${item.pay_method ? `<span class="fin-f-pay">${esc(item.pay_method)}</span>` : ''}${item.note ? `<span class="fin-f-note">${esc(item.note)}</span>` : ''}<button class="fin-f-del">&times;</button>`;
         div.querySelector('.fin-f-del').addEventListener('click', async (e) => {
             e.stopPropagation();
             if (confirm(`'${item.name}' 삭제?`)) { await api(`/api/finance/fixed/${item.id}`, {method:'DELETE'}); refreshFinance(); }
