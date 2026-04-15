@@ -1912,13 +1912,16 @@ function setupFinance() {
     document.getElementById('loanSave').addEventListener('click', async () => {
         const data = {
             name: document.getElementById('loanName').value.trim(),
-            total_amount: parseInt(document.getElementById('loanTotal').value) || 0,
-            monthly_payment: parseInt(document.getElementById('loanMonthly').value) || 0,
+            bank: document.getElementById('loanBank').value.trim(),
             remaining_amount: parseInt(document.getElementById('loanRemaining').value) || 0,
             interest_rate: parseFloat(document.getElementById('loanRate').value) || 0,
-            start_date: document.getElementById('loanStartDate').value || '',
+            due_date: document.getElementById('loanDueDate').value || '',
+            repay_type: document.getElementById('loanRepayType').value,
+            prepay_fee: document.getElementById('loanPrepayFee').value.trim(),
+            monthly_interest: parseInt(document.getElementById('loanMonthlyInterest').value) || 0,
+            account: document.getElementById('loanAccount').value.trim(),
         };
-        if (!data.name || !data.total_amount) { alert('대출명과 총액을 입력해주세요'); return; }
+        if (!data.name) { alert('대출명을 입력해주세요'); return; }
         const editId = document.getElementById('loanEditId').value;
         if (editId) await api(`/api/finance/loans/${editId}`, {method:'PUT', body:JSON.stringify(data)});
         else await api('/api/finance/loans', {method:'POST', body:JSON.stringify(data)});
@@ -1940,11 +1943,14 @@ function openFixedModal(item = null) {
 function openLoanModal(item = null) {
     document.getElementById('loanModalTitle').textContent = item ? '대출 수정' : '대출 등록';
     document.getElementById('loanName').value = item?.name || '';
-    document.getElementById('loanTotal').value = item?.total_amount || '';
-    document.getElementById('loanMonthly').value = item?.monthly_payment || '';
+    document.getElementById('loanBank').value = item?.bank || '';
     document.getElementById('loanRemaining').value = item?.remaining_amount || '';
     document.getElementById('loanRate').value = item?.interest_rate || '';
-    document.getElementById('loanStartDate').value = item?.start_date || '';
+    document.getElementById('loanDueDate').value = item?.due_date || '';
+    document.getElementById('loanRepayType').value = item?.repay_type || '원리금균등';
+    document.getElementById('loanPrepayFee').value = item?.prepay_fee || '';
+    document.getElementById('loanMonthlyInterest').value = item?.monthly_interest || '';
+    document.getElementById('loanAccount').value = item?.account || '';
     document.getElementById('loanEditId').value = item?.id || '';
     document.getElementById('loanModal').classList.remove('hidden');
 }
@@ -2086,19 +2092,20 @@ async function renderFinLoans() {
     $list.innerHTML = '';
     if (!items.length) { $list.innerHTML = '<div style="color:#999;padding:20px;text-align:center">대출이 없습니다.</div>'; return; }
     items.forEach(item => {
-        const pct = item.total_amount > 0 ? Math.round((1 - item.remaining_amount / item.total_amount) * 100) : 0;
         const div = document.createElement('div');
         div.className = 'fin-loan-card';
         div.innerHTML = `
             <div class="fin-l-header"><span class="fin-l-name">${esc(item.name)}</span><button class="fin-l-del">&times;</button></div>
-            <div class="fin-l-bar"><div style="width:${pct}%"></div></div>
+            ${item.bank ? `<div class="fin-l-sub">${esc(item.bank)}</div>` : ''}
             <div class="fin-l-info">
-                <span>총액 ${item.total_amount.toLocaleString()}원</span>
-                <span>잔여 ${item.remaining_amount.toLocaleString()}원</span>
-                <span>월 ${item.monthly_payment.toLocaleString()}원</span>
+                <span>잔액 <strong>${item.remaining_amount.toLocaleString()}원</strong></span>
                 ${item.interest_rate ? `<span>금리 ${item.interest_rate}%</span>` : ''}
+                ${item.monthly_interest ? `<span>월 이자 ${item.monthly_interest.toLocaleString()}원</span>` : ''}
+                ${item.repay_type ? `<span>상환: ${esc(item.repay_type)}</span>` : ''}
+                ${item.due_date ? `<span>만기 ${item.due_date}</span>` : ''}
+                ${item.account ? `<span>계좌: ${esc(item.account)}</span>` : ''}
             </div>
-            <div class="fin-l-pct">${pct}% 상환</div>
+            ${item.prepay_fee ? `<div class="fin-l-fee">중도상환: ${esc(item.prepay_fee)}</div>` : ''}
         `;
         div.querySelector('.fin-l-del').addEventListener('click', async (e) => {
             e.stopPropagation();

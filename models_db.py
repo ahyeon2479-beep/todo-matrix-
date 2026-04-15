@@ -198,17 +198,27 @@ class Loan(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.String(128), db.ForeignKey("user.id"), nullable=False)
     name = db.Column(db.String(200), nullable=False)
-    total_amount = db.Column(db.Integer, nullable=False)
-    monthly_payment = db.Column(db.Integer, default=0)
+    bank = db.Column(db.String(200), default="")
     remaining_amount = db.Column(db.Integer, default=0)
     interest_rate = db.Column(db.Float, default=0)
+    due_date = db.Column(db.String(10), default="")
+    repay_type = db.Column(db.String(50), default="")
+    prepay_fee = db.Column(db.String(300), default="")
+    monthly_interest = db.Column(db.Integer, default=0)
+    account = db.Column(db.String(200), default="")
+    # 기존 호환
+    total_amount = db.Column(db.Integer, default=0)
+    monthly_payment = db.Column(db.Integer, default=0)
     start_date = db.Column(db.String(10), default="")
 
     def to_dict(self):
         return {
-            "id": self.id, "name": self.name,
-            "total_amount": self.total_amount, "monthly_payment": self.monthly_payment,
+            "id": self.id, "name": self.name, "bank": self.bank or "",
             "remaining_amount": self.remaining_amount, "interest_rate": self.interest_rate,
+            "due_date": self.due_date or "", "repay_type": self.repay_type or "",
+            "prepay_fee": self.prepay_fee or "", "monthly_interest": self.monthly_interest,
+            "account": self.account or "",
+            "total_amount": self.total_amount, "monthly_payment": self.monthly_payment,
             "start_date": self.start_date,
         }
 

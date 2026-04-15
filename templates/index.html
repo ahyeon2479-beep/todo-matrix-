@@ -386,16 +386,27 @@
             <h3 id="loanModalTitle">대출 등록</h3>
             <label>대출명</label>
             <input type="text" id="loanName" placeholder="예: 학자금대출">
-            <label>총 대출금액</label>
-            <input type="number" id="loanTotal" placeholder="총액">
-            <label>월 상환액</label>
-            <input type="number" id="loanMonthly" placeholder="매월 갚는 금액">
-            <label>잔여금액</label>
+            <label>금융기관</label>
+            <input type="text" id="loanBank" placeholder="예: 국민은행">
+            <label>잔액</label>
             <input type="number" id="loanRemaining" placeholder="남은 금액">
             <label>금리 (%)</label>
             <input type="number" id="loanRate" step="0.1" placeholder="예: 3.5">
-            <label>시작일</label>
-            <input type="date" id="loanStartDate">
+            <label>만기일</label>
+            <input type="date" id="loanDueDate">
+            <label>월 상환방식</label>
+            <select id="loanRepayType">
+                <option value="원리금균등">원리금균등</option>
+                <option value="원금균등">원금균등</option>
+                <option value="만기일시">만기일시상환</option>
+                <option value="자유상환">자유상환</option>
+            </select>
+            <label>중도상환 수수료</label>
+            <input type="text" id="loanPrepayFee" placeholder="예: 잔여원금의 1.2%, 2027년까지">
+            <label>월 이자 금액</label>
+            <input type="number" id="loanMonthlyInterest" placeholder="매월 내는 이자">
+            <label>돈 나가는 계좌</label>
+            <input type="text" id="loanAccount" placeholder="예: 국민 123-456-789">
             <input type="hidden" id="loanEditId">
             <div class="modal-buttons">
                 <button class="btn-cancel" id="loanCancel">취소</button>

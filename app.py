@@ -818,9 +818,11 @@ def get_loans():
 @login_required
 def create_loan():
     data = request.json
-    item = Loan(user_id=current_user.id, name=data["name"], total_amount=data["total_amount"],
-                monthly_payment=data.get("monthly_payment", 0), remaining_amount=data.get("remaining_amount", 0),
-                interest_rate=data.get("interest_rate", 0), start_date=data.get("start_date", ""))
+    item = Loan(user_id=current_user.id, name=data["name"],
+                bank=data.get("bank", ""), remaining_amount=data.get("remaining_amount", 0),
+                interest_rate=data.get("interest_rate", 0), due_date=data.get("due_date", ""),
+                repay_type=data.get("repay_type", ""), prepay_fee=data.get("prepay_fee", ""),
+                monthly_interest=data.get("monthly_interest", 0), account=data.get("account", ""))
     db.session.add(item)
     db.session.commit()
     return jsonify(item.to_dict()), 201
@@ -831,7 +833,7 @@ def create_loan():
 def update_loan(lid):
     item = Loan.query.filter_by(id=lid, user_id=current_user.id).first_or_404()
     data = request.json
-    for k in ["name", "total_amount", "monthly_payment", "remaining_amount", "interest_rate", "start_date"]:
+    for k in ["name", "bank", "remaining_amount", "interest_rate", "due_date", "repay_type", "prepay_fee", "monthly_interest", "account"]:
         if k in data:
             setattr(item, k, data[k])
     db.session.commit()
