@@ -1930,6 +1930,7 @@ function setupFinance() {
             prepay_fee: document.getElementById('loanPrepayFee').value.trim(),
             monthly_interest: parseInt(document.getElementById('loanMonthlyInterest').value) || 0,
             account: document.getElementById('loanAccount').value.trim(),
+            pay_day: parseInt(document.getElementById('loanPayDay').value) || 0,
         };
         if (!data.name) { alert('대출명을 입력해주세요'); return; }
         // 월 이자 미입력 시 자동계산
@@ -2000,6 +2001,7 @@ function openLoanModal(item = null) {
     document.getElementById('loanPrepayFee').value = item?.prepay_fee || '';
     document.getElementById('loanMonthlyInterest').value = item?.monthly_interest || '';
     document.getElementById('loanAccount').value = item?.account || '';
+    document.getElementById('loanPayDay').value = item?.pay_day || '';
     document.getElementById('loanEditId').value = item?.id || '';
     document.getElementById('loanModal').classList.remove('hidden');
 }
@@ -2081,13 +2083,23 @@ async function renderFinDashboard() {
 }
 
 async function renderFinCalendar() {
-    const records = await api(`/api/finance?year=${finYear}&month=${finMonth}`);
+    const [records, loans, fixedItems] = await Promise.all([
+        api(`/api/finance?year=${finYear}&month=${finMonth}`),
+        api('/api/finance/loans'),
+        api('/api/finance/fixed'),
+    ]);
     const byDate = {};
     records.forEach(r => {
-        if (!byDate[r.date_str]) byDate[r.date_str] = {income: 0, expense: 0};
+        if (!byDate[r.date_str]) byDate[r.date_str] = {income: 0, expense: 0, tags: []};
         if (r.record_type === 'income') byDate[r.date_str].income += r.amount;
         else byDate[r.date_str].expense += r.amount;
     });
+    // 대출 상환일 표시
+    const payDays = {};
+    loans.forEach(l => { if (l.pay_day) payDays[l.pay_day] = (payDays[l.pay_day] || []).concat(l.name); });
+    // 고정비 결제일 표시
+    fixedItems.forEach(f => { if (f.day_of_month && f.is_active) payDays[f.day_of_month] = (payDays[f.day_of_month] || []).concat(f.name); });
+
     const $grid = document.getElementById('finCalGrid');
     $grid.innerHTML = '';
     ['일','월','화','수','목','금','토'].forEach(d => {
@@ -2102,10 +2114,16 @@ async function renderFinCalendar() {
         const today = todayStr();
         if (ds === today) cell.classList.add('today');
         let inner = `<div class="fin-cal-day">${day}</div>`;
+        // 대출/고정비 상환일 태그
+        if (!ov && mo === finMonth && payDays[day]) {
+            payDays[day].forEach(name => {
+                inner += `<div class="fin-cal-tag">${esc(name.length > 5 ? name.slice(0,5)+'…' : name)}</div>`;
+            });
+        }
         if (data) {
             if (data.income) inner += `<div class="fin-cal-income">+${data.income >= 10000 ? Math.round(data.income/10000)+'만' : data.income.toLocaleString()}</div>`;
             if (data.expense) inner += `<div class="fin-cal-expense">-${data.expense >= 10000 ? Math.round(data.expense/10000)+'만' : data.expense.toLocaleString()}</div>`;
-        } else if (!ov && mo === finMonth) {
+        } else if (!ov && mo === finMonth && !payDays[day]) {
             const d = new Date(yr, mo-1, day);
             if (d <= new Date()) inner += `<div class="fin-cal-nospend">✓</div>`;
         }

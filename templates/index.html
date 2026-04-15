@@ -405,6 +405,8 @@
             <input type="text" id="loanPrepayFee" placeholder="예: 잔여원금의 1.2%, 2027년까지">
             <label>월 이자 금액 <span id="loanCalcLabel" style="color:#1A73E8;font-size:11px"></span></label>
             <input type="number" id="loanMonthlyInterest" placeholder="자동 계산됩니다">
+            <label>매월 상환일 (1~31)</label>
+            <input type="number" id="loanPayDay" min="1" max="31" placeholder="예: 25">
             <label>돈 나가는 계좌</label>
             <input type="text" id="loanAccount" placeholder="예: 국민 123-456-789">
             <input type="hidden" id="loanEditId">

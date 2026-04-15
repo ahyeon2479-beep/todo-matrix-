@@ -822,7 +822,8 @@ def create_loan():
                 bank=data.get("bank", ""), remaining_amount=data.get("remaining_amount", 0),
                 interest_rate=data.get("interest_rate", 0), due_date=data.get("due_date", ""),
                 repay_type=data.get("repay_type", ""), prepay_fee=data.get("prepay_fee", ""),
-                monthly_interest=data.get("monthly_interest", 0), account=data.get("account", ""))
+                monthly_interest=data.get("monthly_interest", 0), account=data.get("account", ""),
+                pay_day=data.get("pay_day", 0))
     db.session.add(item)
     db.session.commit()
     return jsonify(item.to_dict()), 201
@@ -833,7 +834,7 @@ def create_loan():
 def update_loan(lid):
     item = Loan.query.filter_by(id=lid, user_id=current_user.id).first_or_404()
     data = request.json
-    for k in ["name", "bank", "remaining_amount", "interest_rate", "due_date", "repay_type", "prepay_fee", "monthly_interest", "account"]:
+    for k in ["name", "bank", "remaining_amount", "interest_rate", "due_date", "repay_type", "prepay_fee", "monthly_interest", "account", "pay_day"]:
         if k in data:
             setattr(item, k, data[k])
     db.session.commit()
@@ -880,6 +881,7 @@ with app.app_context():
             ("prepay_fee", "VARCHAR(300) DEFAULT ''"),
             ("monthly_interest", "INTEGER DEFAULT 0"),
             ("account", "VARCHAR(200) DEFAULT ''"),
+            ("pay_day", "INTEGER DEFAULT 0"),
         ]
         for col_name, col_type in _new_loan_cols:
             try:

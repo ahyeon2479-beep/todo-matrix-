@@ -206,6 +206,7 @@ class Loan(db.Model):
     prepay_fee = db.Column(db.String(300), default="")
     monthly_interest = db.Column(db.Integer, default=0)
     account = db.Column(db.String(200), default="")
+    pay_day = db.Column(db.Integer, default=0)  # 매월 상환일
     # 기존 호환
     total_amount = db.Column(db.Integer, default=0)
     monthly_payment = db.Column(db.Integer, default=0)
@@ -217,7 +218,7 @@ class Loan(db.Model):
             "remaining_amount": self.remaining_amount, "interest_rate": self.interest_rate,
             "due_date": self.due_date or "", "repay_type": self.repay_type or "",
             "prepay_fee": self.prepay_fee or "", "monthly_interest": self.monthly_interest,
-            "account": self.account or "",
+            "account": self.account or "", "pay_day": self.pay_day or 0,
             "total_amount": self.total_amount, "monthly_payment": self.monthly_payment,
             "start_date": self.start_date,
         }
