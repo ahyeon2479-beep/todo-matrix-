@@ -2135,8 +2135,8 @@ async function renderFinCalendar() {
             });
         }
         if (data) {
-            if (data.income) inner += `<div class="fin-cal-income">+${data.income >= 10000 ? Math.round(data.income/10000)+'만' : data.income.toLocaleString()}</div>`;
-            if (data.expense) inner += `<div class="fin-cal-expense">-${data.expense >= 10000 ? Math.round(data.expense/10000)+'만' : data.expense.toLocaleString()}</div>`;
+            if (data.income) inner += `<div class="fin-cal-income">+${data.income.toLocaleString()}원</div>`;
+            if (data.expense) inner += `<div class="fin-cal-expense">-${data.expense.toLocaleString()}원</div>`;
         } else if (!ov && mo === finMonth && !payDays[day]) {
             const d = new Date(yr, mo-1, day);
             if (d <= new Date()) inner += `<div class="fin-cal-nospend">✓</div>`;
