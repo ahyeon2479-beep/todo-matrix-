@@ -2096,7 +2096,21 @@ async function renderFinCalendar() {
     });
     // 대출/고정비 상환일 정보
     const payDays = {};
-    loans.forEach(l => { if (l.pay_day) { if (!payDays[l.pay_day]) payDays[l.pay_day] = []; payDays[l.pay_day].push({type:'loan', name:l.name, amount:l.monthly_interest, account:l.account, bank:l.bank, repay_type:l.repay_type}); }});
+    loans.forEach(l => {
+        if (!l.pay_day) return;
+        if (!payDays[l.pay_day]) payDays[l.pay_day] = [];
+        // 월 상환금액 계산
+        let monthlyPayment = l.monthly_payment || 0;
+        if (!monthlyPayment && l.remaining_amount && l.interest_rate && l.due_date) {
+            const r = l.interest_rate / 100 / 12;
+            const months = Math.max(1, monthsBetween(todayStr(), l.due_date));
+            if (l.repay_type === '원리금균등') monthlyPayment = Math.round(l.remaining_amount * r * Math.pow(1+r, months) / (Math.pow(1+r, months) - 1));
+            else if (l.repay_type === '원금균등') monthlyPayment = Math.round(l.remaining_amount / months + l.remaining_amount * r);
+            else if (l.repay_type === '만기일시') monthlyPayment = Math.round(l.remaining_amount * r);
+            else monthlyPayment = l.monthly_interest || 0;
+        }
+        payDays[l.pay_day].push({type:'loan', name:l.name, monthlyPayment, account:l.account, bank:l.bank, repay_type:l.repay_type});
+    });
     fixedItems.forEach(f => { if (f.day_of_month && f.is_active) { if (!payDays[f.day_of_month]) payDays[f.day_of_month] = []; payDays[f.day_of_month].push({type:'fixed', name:f.name, amount:f.amount, category:f.category}); }});
 
     const $grid = document.getElementById('finCalGrid');
@@ -2146,7 +2160,7 @@ function openFinDayModal(ds, day, month, dayData, tags, allRecords) {
                 html += `<div class="fin-day-card loan">
                     <div class="fin-day-card-title">🏦 ${esc(p.name)}</div>
                     <div class="fin-day-card-info">
-                        ${p.amount ? `<span>월 이자: <strong>${p.amount.toLocaleString()}원</strong></span>` : ''}
+                        ${p.monthlyPayment ? `<span>월 상환금: <strong>${p.monthlyPayment.toLocaleString()}원</strong></span>` : ''}
                         ${p.repay_type ? `<span>상환: ${esc(p.repay_type)}</span>` : ''}
                         ${p.bank ? `<span>금융기관: ${esc(p.bank)}</span>` : ''}
                         ${p.account ? `<span>계좌: ${esc(p.account)}</span>` : ''}
