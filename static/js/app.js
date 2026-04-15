@@ -1915,6 +1915,19 @@ function setupFinance() {
             await loadPayAccounts();
         });
     });
+    document.querySelectorAll('.pay-account-del').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!payAccountsCache.length) { alert('삭제할 계좌가 없습니다'); return; }
+            const list = payAccountsCache.map((a, i) => `${i+1}) ${a.name}`).join('\n');
+            const idx = prompt(`삭제할 계좌 번호를 입력하세요:\n${list}`);
+            if (!idx) return;
+            const item = payAccountsCache[parseInt(idx) - 1];
+            if (!item) { alert('잘못된 번호입니다'); return; }
+            if (!confirm(`'${item.name}' 계좌를 삭제할까요?`)) return;
+            await api(`/api/pay-accounts/${item.id}`, {method:'DELETE'});
+            await loadPayAccounts();
+        });
+    });
     document.getElementById('finCancel').addEventListener('click', () => document.getElementById('finModal').classList.add('hidden'));
     document.getElementById('finSave').addEventListener('click', saveFinRecord);
     // 고정비 모달
