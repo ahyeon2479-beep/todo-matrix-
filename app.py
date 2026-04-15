@@ -872,6 +872,21 @@ def _matches_repeat(todo, date_str):
 with app.app_context():
     try:
         db.create_all()
+        # Loan 테이블에 새 컬럼 추가
+        _new_loan_cols = [
+            ("bank", "VARCHAR(200) DEFAULT ''"),
+            ("due_date", "VARCHAR(10) DEFAULT ''"),
+            ("repay_type", "VARCHAR(50) DEFAULT ''"),
+            ("prepay_fee", "VARCHAR(300) DEFAULT ''"),
+            ("monthly_interest", "INTEGER DEFAULT 0"),
+            ("account", "VARCHAR(200) DEFAULT ''"),
+        ]
+        for col_name, col_type in _new_loan_cols:
+            try:
+                db.session.execute(db.text(f"ALTER TABLE loan ADD COLUMN {col_name} {col_type}"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
         print("DB tables created successfully")
     except Exception as e:
         print(f"DB create_all error: {e}")
