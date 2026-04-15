@@ -1889,20 +1889,64 @@ function setupFinance() {
     document.getElementById('finAddBtn').addEventListener('click', () => openFinModal());
     document.getElementById('finCancel').addEventListener('click', () => document.getElementById('finModal').classList.add('hidden'));
     document.getElementById('finSave').addEventListener('click', saveFinRecord);
-    document.getElementById('fixedAddBtn').addEventListener('click', () => {
-        const name = prompt('고정비 이름:'); if (!name) return;
-        const amount = prompt('월 금액:'); if (!amount) return;
-        const day = prompt('매월 결제일 (1~31):', '1');
-        api('/api/finance/fixed', {method:'POST', body:JSON.stringify({name, amount:parseInt(amount), day_of_month:parseInt(day||1)})}).then(() => refreshFinance());
+    // 고정비 모달
+    document.getElementById('fixedAddBtn').addEventListener('click', () => openFixedModal());
+    document.getElementById('fixedCancel').addEventListener('click', () => document.getElementById('fixedModal').classList.add('hidden'));
+    document.getElementById('fixedSave').addEventListener('click', async () => {
+        const data = {
+            name: document.getElementById('fixedName').value.trim(),
+            amount: parseInt(document.getElementById('fixedAmount').value) || 0,
+            category: document.getElementById('fixedCategory').value,
+            day_of_month: parseInt(document.getElementById('fixedDay').value) || 1,
+        };
+        if (!data.name || !data.amount) { alert('이름과 금액을 입력해주세요'); return; }
+        const editId = document.getElementById('fixedEditId').value;
+        if (editId) await api(`/api/finance/fixed/${editId}`, {method:'PUT', body:JSON.stringify(data)});
+        else await api('/api/finance/fixed', {method:'POST', body:JSON.stringify(data)});
+        document.getElementById('fixedModal').classList.add('hidden');
+        refreshFinance();
     });
-    document.getElementById('loanAddBtn').addEventListener('click', () => {
-        const name = prompt('대출명:'); if (!name) return;
-        const total = prompt('총 대출금액:'); if (!total) return;
-        const monthly = prompt('월 상환액:', '0');
-        const remaining = prompt('잔여금액:', total);
-        const rate = prompt('금리(%):', '0');
-        api('/api/finance/loans', {method:'POST', body:JSON.stringify({name, total_amount:parseInt(total), monthly_payment:parseInt(monthly||0), remaining_amount:parseInt(remaining||total), interest_rate:parseFloat(rate||0)})}).then(() => refreshFinance());
+    // 대출 모달
+    document.getElementById('loanAddBtn').addEventListener('click', () => openLoanModal());
+    document.getElementById('loanCancel').addEventListener('click', () => document.getElementById('loanModal').classList.add('hidden'));
+    document.getElementById('loanSave').addEventListener('click', async () => {
+        const data = {
+            name: document.getElementById('loanName').value.trim(),
+            total_amount: parseInt(document.getElementById('loanTotal').value) || 0,
+            monthly_payment: parseInt(document.getElementById('loanMonthly').value) || 0,
+            remaining_amount: parseInt(document.getElementById('loanRemaining').value) || 0,
+            interest_rate: parseFloat(document.getElementById('loanRate').value) || 0,
+            start_date: document.getElementById('loanStartDate').value || '',
+        };
+        if (!data.name || !data.total_amount) { alert('대출명과 총액을 입력해주세요'); return; }
+        const editId = document.getElementById('loanEditId').value;
+        if (editId) await api(`/api/finance/loans/${editId}`, {method:'PUT', body:JSON.stringify(data)});
+        else await api('/api/finance/loans', {method:'POST', body:JSON.stringify(data)});
+        document.getElementById('loanModal').classList.add('hidden');
+        refreshFinance();
     });
+}
+
+function openFixedModal(item = null) {
+    document.getElementById('fixedModalTitle').textContent = item ? '고정비 수정' : '고정비 등록';
+    document.getElementById('fixedName').value = item?.name || '';
+    document.getElementById('fixedAmount').value = item?.amount || '';
+    document.getElementById('fixedCategory').value = item?.category || '주거';
+    document.getElementById('fixedDay').value = item?.day_of_month || 1;
+    document.getElementById('fixedEditId').value = item?.id || '';
+    document.getElementById('fixedModal').classList.remove('hidden');
+}
+
+function openLoanModal(item = null) {
+    document.getElementById('loanModalTitle').textContent = item ? '대출 수정' : '대출 등록';
+    document.getElementById('loanName').value = item?.name || '';
+    document.getElementById('loanTotal').value = item?.total_amount || '';
+    document.getElementById('loanMonthly').value = item?.monthly_payment || '';
+    document.getElementById('loanRemaining').value = item?.remaining_amount || '';
+    document.getElementById('loanRate').value = item?.interest_rate || '';
+    document.getElementById('loanStartDate').value = item?.start_date || '';
+    document.getElementById('loanEditId').value = item?.id || '';
+    document.getElementById('loanModal').classList.remove('hidden');
 }
 
 function openFinModal(record = null) {
@@ -2027,9 +2071,11 @@ async function renderFinFixed() {
         const div = document.createElement('div');
         div.className = 'fin-fixed-item' + (item.is_active ? '' : ' inactive');
         div.innerHTML = `<span class="fin-f-name">${esc(item.name)}</span><span class="fin-f-day">매월 ${item.day_of_month}일</span><span class="fin-f-amount">${item.amount.toLocaleString()}원</span><button class="fin-f-del">&times;</button>`;
-        div.querySelector('.fin-f-del').addEventListener('click', async () => {
+        div.querySelector('.fin-f-del').addEventListener('click', async (e) => {
+            e.stopPropagation();
             if (confirm(`'${item.name}' 삭제?`)) { await api(`/api/finance/fixed/${item.id}`, {method:'DELETE'}); refreshFinance(); }
         });
+        div.addEventListener('click', () => openFixedModal(item));
         $list.appendChild(div);
     });
 }
@@ -2054,9 +2100,11 @@ async function renderFinLoans() {
             </div>
             <div class="fin-l-pct">${pct}% 상환</div>
         `;
-        div.querySelector('.fin-l-del').addEventListener('click', async () => {
+        div.querySelector('.fin-l-del').addEventListener('click', async (e) => {
+            e.stopPropagation();
             if (confirm(`'${item.name}' 삭제?`)) { await api(`/api/finance/loans/${item.id}`, {method:'DELETE'}); refreshFinance(); }
         });
+        div.addEventListener('click', () => openLoanModal(item));
         $list.appendChild(div);
     });
 }
