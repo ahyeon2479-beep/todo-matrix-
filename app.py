@@ -265,6 +265,18 @@ def add_habit():
     return jsonify({"id": habit.id, "name": habit.name}), 201
 
 
+@app.route("/api/habits/reorder", methods=["POST"])
+@login_required
+def reorder_habits():
+    ids = request.json.get("ids", [])
+    for i, hid in enumerate(ids):
+        habit = Habit.query.filter_by(id=hid, user_id=current_user.id).first()
+        if habit:
+            habit.order = i
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
 @app.route("/api/habits/<int:habit_id>", methods=["DELETE"])
 @login_required
 def delete_habit(habit_id):
@@ -276,18 +288,6 @@ def delete_habit(habit_id):
     if linked_todo:
         db.session.delete(linked_todo)
     db.session.delete(habit)
-    db.session.commit()
-    return jsonify({"ok": True})
-
-
-@app.route("/api/habits/reorder", methods=["POST"])
-@login_required
-def reorder_habits():
-    ids = request.json.get("ids", [])
-    for i, hid in enumerate(ids):
-        habit = Habit.query.filter_by(id=hid, user_id=current_user.id).first()
-        if habit:
-            habit.order = i
     db.session.commit()
     return jsonify({"ok": True})
 

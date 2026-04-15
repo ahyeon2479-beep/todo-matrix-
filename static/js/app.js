@@ -768,15 +768,20 @@ async function refreshHabitFull() {
             e.preventDefault();
             chip.classList.remove('drag-over');
             const draggedId = parseInt(e.dataTransfer.getData('text/plain'));
-            if (draggedId === h.id) return;
+            if (!draggedId || draggedId === h.id) return;
             // 순서 재배열
             const allChips = [...$chips.querySelectorAll('.habit-chip')];
             const ids = allChips.map(c => parseInt(c.dataset.habitId));
             const fromIdx = ids.indexOf(draggedId);
             const toIdx = ids.indexOf(h.id);
+            if (fromIdx === -1 || toIdx === -1) return;
             ids.splice(fromIdx, 1);
             ids.splice(toIdx, 0, draggedId);
-            await api('/api/habits/reorder', {method:'POST', body:JSON.stringify({ids})});
+            try {
+                await api('/api/habits/reorder', {method:'POST', body:JSON.stringify({ids})});
+            } catch (err) {
+                alert('순서 변경 실패: ' + err.message);
+            }
             refreshHabitFull();
         });
         chip.querySelector('button').addEventListener('click', async (ev) => {
