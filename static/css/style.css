@@ -429,9 +429,10 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
     cursor: grab;
     transition: transform 0.1s;
 }
-.habit-chip { cursor: grab; }
+.habit-chip { cursor: grab; position: relative; }
 .habit-chip:active { cursor: grabbing; }
 .habit-chip.drag-over { background: #c8e6c9; transform: scale(1.05); }
+.habit-chip .habit-name { pointer-events: none; }
 .habit-arrow { cursor: pointer; color: #aaa; font-size: 9px; padding: 0 2px; user-select: none; }
 .habit-arrow:hover { color: #1A73E8; }
 .habit-del { background: none; border: none; cursor: pointer; color: #888; font-size: 12px; }
