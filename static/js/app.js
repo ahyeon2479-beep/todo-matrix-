@@ -366,6 +366,8 @@ function refreshMatrix() {
     loadMemo();
 }
 
+let dragTodoId = null;
+
 function renderMatrix(todos) {
     const show = document.getElementById('showCompleted').checked;
     document.querySelectorAll('.quadrant').forEach(q => {
@@ -382,17 +384,43 @@ function renderMatrix(todos) {
         items.forEach(t => {
             const div = document.createElement('div');
             div.className = 'q-item' + (t.completed ? ' completed' : '');
+            div.draggable = true;
             div.innerHTML = `
                 <input type="checkbox" ${t.completed ? 'checked' : ''}>
                 <span class="q-item-title">${esc(t.title)}</span>
                 <button class="q-item-btn edit-btn">&#9998;</button>
                 <button class="q-item-btn del-btn">&times;</button>
             `;
+            div.addEventListener('dragstart', (e) => {
+                dragTodoId = t.id;
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => div.style.opacity = '0.3', 0);
+            });
+            div.addEventListener('dragend', () => { div.style.opacity = '1'; dragTodoId = null; });
             div.querySelector('input').addEventListener('change', () => toggleTodo(t.id));
             div.querySelector('.q-item-title').addEventListener('click', () => openTodoModal(t));
             div.querySelector('.edit-btn').addEventListener('click', () => openTodoModal(t));
             div.querySelector('.del-btn').addEventListener('click', () => deleteTodo(t.id, t.title));
             $items.appendChild(div);
+        });
+        // 사분면에 드롭 이벤트
+        q.addEventListener('dragover', (e) => { e.preventDefault(); q.style.outline = '2px dashed #1A73E8'; });
+        q.addEventListener('dragleave', () => { q.style.outline = ''; });
+        q.addEventListener('drop', (e) => {
+            e.preventDefault();
+            q.style.outline = '';
+            if (!dragTodoId) return;
+            const newUrgent = q.dataset.urgent === 'true';
+            const newImportant = q.dataset.important === 'true';
+            // 낙관적 업데이트
+            const todo = todos.find(t => t.id === dragTodoId);
+            if (todo) {
+                todo.urgent = newUrgent;
+                todo.important = newImportant;
+                renderMatrix(todos);
+            }
+            api(`/api/todos/${dragTodoId}`, {method:'PUT', body:JSON.stringify({urgent: newUrgent, important: newImportant})});
+            dragTodoId = null;
         });
     });
     refreshSummary(todos, show);
