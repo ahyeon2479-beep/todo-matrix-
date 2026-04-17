@@ -2112,16 +2112,26 @@ async function refreshFinance() {
 }
 
 async function renderFinDashboard() {
-    const [summary, records] = await Promise.all([
+    const [summary, records, balData] = await Promise.all([
         api(`/api/finance/summary?year=${finYear}&month=${finMonth}`),
-        api(`/api/finance?year=${finYear}&month=${finMonth}`)
+        api(`/api/finance?year=${finYear}&month=${finMonth}`),
+        api(`/api/finance/start-balance?year=${finYear}&month=${finMonth}`)
     ]);
+    const startBalance = balData.amount || 0;
+    const currentBalance = startBalance + summary.income - summary.expense;
     // 요약 카드
     document.getElementById('finSummary').innerHTML = `
+        <div class="fin-card fin-start-bal"><div class="fin-card-label">시작 잔액 <span class="fin-edit-bal" title="수정">✎</span></div><div class="fin-card-amount">${startBalance.toLocaleString()}원</div></div>
         <div class="fin-card fin-income"><div class="fin-card-label">수입</div><div class="fin-card-amount">+${summary.income.toLocaleString()}원</div></div>
         <div class="fin-card fin-expense"><div class="fin-card-label">지출</div><div class="fin-card-amount">-${summary.expense.toLocaleString()}원</div></div>
-        <div class="fin-card fin-balance"><div class="fin-card-label">잔액</div><div class="fin-card-amount">${summary.balance.toLocaleString()}원</div></div>
+        <div class="fin-card fin-balance"><div class="fin-card-label">현재 잔액</div><div class="fin-card-amount">${currentBalance.toLocaleString()}원</div></div>
     `;
+    document.querySelector('.fin-edit-bal')?.addEventListener('click', async () => {
+        const val = prompt('이번 달 시작 잔액을 입력하세요:', startBalance || '');
+        if (val === null) return;
+        await api('/api/finance/start-balance', {method:'PUT', body:JSON.stringify({year:finYear, month:finMonth, amount:parseInt(val)||0})});
+        refreshFinance();
+    });
     // 카테고리 차트
     const $chart = document.getElementById('finCatChart');
     const cats = Object.entries(summary.categories).sort((a,b) => b[1]-a[1]);

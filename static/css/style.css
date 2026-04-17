@@ -1232,6 +1232,10 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
 .fin-tab.active { background: #1A73E8; color: white; }
 .fin-summary { display: flex; gap: 10px; margin-bottom: 16px; }
 .fin-card { flex: 1; padding: 14px; border-radius: 10px; text-align: center; }
+.fin-start-bal { background: #f3e5f5; }
+.fin-start-bal .fin-card-amount { color: #7b1fa2; }
+.fin-edit-bal { cursor: pointer; color: #7b1fa2; font-size: 12px; }
+.fin-edit-bal:hover { text-decoration: underline; }
 .fin-income { background: #e3f2fd; }
 .fin-expense { background: #fce4ec; }
 .fin-balance { background: #e8f5e9; }

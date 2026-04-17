@@ -725,6 +725,36 @@ def delete_pay_account(pid):
     return jsonify({"ok": True})
 
 
+# ── Finance Balance API ───────────────────────────────────
+
+@app.route("/api/finance/start-balance")
+@login_required
+def get_start_balance():
+    year = request.args.get("year", type=int)
+    month = request.args.get("month", type=int)
+    key = f"__fin_balance_{year}_{month}__"
+    memo = Memo.query.filter_by(user_id=current_user.id, date_str=key).first()
+    return jsonify({"amount": int(memo.text) if memo and memo.text else 0})
+
+
+@app.route("/api/finance/start-balance", methods=["PUT"])
+@login_required
+def set_start_balance():
+    data = request.json
+    year = data.get("year")
+    month = data.get("month")
+    amount = data.get("amount", 0)
+    key = f"__fin_balance_{year}_{month}__"
+    memo = Memo.query.filter_by(user_id=current_user.id, date_str=key).first()
+    if memo:
+        memo.text = str(amount)
+    else:
+        memo = Memo(user_id=current_user.id, date_str=key, text=str(amount))
+        db.session.add(memo)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
 # ── Finance API ──────────────────────────────────────────
 
 @app.route("/api/finance")
