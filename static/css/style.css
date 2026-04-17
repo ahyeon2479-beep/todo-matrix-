@@ -247,10 +247,10 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
     gap: 4px;
     padding: 4px 6px;
     margin-bottom: 3px;
-    background: rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.85);
     border-radius: 4px;
     font-size: 12px;
-    color: white;
+    color: #333;
 }
 .q-item.completed { opacity: 0.5; text-decoration: line-through; }
 .q-item input[type="checkbox"] { cursor: pointer; flex-shrink: 0; }
@@ -258,12 +258,12 @@ hr { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
 .q-item-btn {
     background: none;
     border: none;
-    color: rgba(255,255,255,0.7);
+    color: #999;
     cursor: pointer;
     font-size: 12px;
     padding: 0 2px;
 }
-.q-item-btn:hover { color: white; }
+.q-item-btn:hover { color: #333; }
 .q-add {
     background: rgba(255,255,255,0.2);
     border: 1px dashed rgba(255,255,255,0.4);
