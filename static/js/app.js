@@ -1678,21 +1678,31 @@ function openMemoModal(memo = null) {
 }
 
 async function saveFreeMemo() {
-    const data = {
-        title: document.getElementById('memoTitleInput').value.trim(),
-        content: document.getElementById('memoContentInput').innerHTML,
-        folder_id: document.getElementById('memoFolderSelect')?.value || null,
-    };
-    if (data.folder_id === '') data.folder_id = null;
-    else if (data.folder_id) data.folder_id = parseInt(data.folder_id);
-    const editId = document.getElementById('memoEditId').value;
-    if (editId) {
-        await api(`/api/free-memos/${editId}`, {method:'PUT', body:JSON.stringify(data)});
-    } else {
-        await api('/api/free-memos', {method:'POST', body:JSON.stringify(data)});
+    const $save = document.getElementById('memoSave');
+    $save.disabled = true;
+    const originalText = $save.textContent;
+    $save.textContent = '저장 중...';
+    try {
+        const folderVal = document.getElementById('memoFolderSelect')?.value;
+        const data = {
+            title: document.getElementById('memoTitleInput').value.trim() || '제목 없음',
+            content: document.getElementById('memoContentInput').innerHTML,
+            folder_id: folderVal ? parseInt(folderVal) : null,
+        };
+        const editId = document.getElementById('memoEditId').value;
+        if (editId) {
+            await api(`/api/free-memos/${editId}`, {method:'PUT', body:JSON.stringify(data)});
+        } else {
+            await api('/api/free-memos', {method:'POST', body:JSON.stringify(data)});
+        }
+        document.getElementById('freeMemoModal').classList.add('hidden');
+        refreshFreeMemo();
+    } catch (err) {
+        alert('저장 실패: ' + (err.message || err));
+    } finally {
+        $save.disabled = false;
+        $save.textContent = originalText;
     }
-    document.getElementById('freeMemoModal').classList.add('hidden');
-    refreshFreeMemo();
 }
 
 function toggleMemoPreview() {
